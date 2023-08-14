@@ -1,8 +1,8 @@
 '''
 Author: facsert
 Date: 2023-08-08 22:11:46
-LastEditTime: 2023-08-08 23:13:24
-LastEditors: facsert
+LastEditTime : 2023-08-10 11:44:05
+LastEditors  : Please set LastEditors
 Description: 
 '''
 
@@ -86,8 +86,6 @@ class Arg:
         cls.set_version()
         cls.parse_args()
         return cls.params
-
-
 
 if __name__ == "__main__":
     dic = Arg()
