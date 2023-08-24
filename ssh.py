@@ -1,7 +1,7 @@
 '''
 Author: facsert
 Date: 2023-08-23 20:34:57
-LastEditTime: 2023-08-23 22:19:25
+LastEditTime: 2023-08-24 21:52:23
 LastEditors: facsert
 Description: 
 '''
@@ -31,11 +31,12 @@ class Client:
         )
         return client
 
-    def exec(self, command):
+    def exec(self, command, timeout=30):
         print(command)
-        _, stdout, stderr = self.client.exec_command(command)
-        success = True if stdout.channel.recv_exit_status() == 0 else False
-        return success, f"{stdout.read().decode('utf-8')}{stderr.read().decode('utf-8')}"
+        _, stdout, stderr = self.client.exec_command(command, timeout=timeout)
+        succ = True if stdout.channel.recv_exit_status() == 0 else False
+        output = f"{stdout.read().decode('utf-8')}{stderr.read().decode('utf-8')}"
+        return succ, output
     
     def shell(self, command, timeout=20):
         channel = self.client.invoke_shell()
