@@ -1,7 +1,7 @@
 '''
 Author: facsert
 Date: 2023-08-23 20:34:57
-LastEditTime: 2023-08-27 23:13:20
+LastEditTime: 2023-08-27 23:44:58
 LastEditors: facsert
 Description: 
 '''
@@ -58,26 +58,23 @@ class Client:
         _, stdout, _ = self.client.exec_command(command, timeout=timeout)
         stdout.channel.set_combine_stderr(True)
 
-        succ, output, end_time = False, "", time() + timeout
-        while stdout.readable():
-            try:
-                line = stdout.readline()
-                output += line
-                print(line, end="")
-                
-                if stdout.channel.exit_status_ready() and line == "":
+        succ, output, end_time = False, [], time() + timeout
+        try:
+            for line in stdout:
+                if line == "" and stdout.channel.exit_status_ready():
                     succ = stdout.channel.recv_exit_status() == 0
                     break
 
+                output.append(line)
+                print(line, end="")
+
                 if time() > end_time:
                     raise socket.timeout()
-                    
-            except socket.timeout as e:
-                print(f"\nTimeoutError: {command}; \nReason: {e}")
-                output += f"\nTimeoutError: {command}; \nReason: {e}"
-                break
-
-        return succ, output
+        except socket.timeout as e:
+            print(f"\nTimeoutError: {command}; \nReason: {e}")
+            output.append(f"\nTimeoutError: {command}; \nReason: {e}")
+    
+        return succ, "".join(output)
     
 
     def shell(self, command, expect="", timeout=20, resp_timeout=3):
@@ -131,12 +128,13 @@ if __name__ == "__main__":
     client = Client("192.168.1.103", 22, "root", "admin")
     # success, output = client.exec("ls -al", 3)
     # success, output = client.exec("cat -n /Users/facsert/.zshrc", 5)
-    succ, output = client.exec("data; sleep 5;date", 8)
-    print(succ)
-    # success, output = client.exec("ping -c 5 localhost", 10)
+    # succ, output = client.exec("data; sleep 5;date", 3)
+    # print(succ)
+    success, output = client.exec("ping -c 5 localhost", 8)
+    # success, output = client.exec("python3", 4)
 
 
-    # print(output)
+    print(output)
     # success, output = client.shell("ping -c 5 localhost", "127.0.0.1", 15)
     # succ, output = client.shell("python3")
     # succ, output = client.shell("a = 'hello'")
