@@ -1,38 +1,38 @@
 '''
 Author: facsert
 Date: 2023-08-07 20:44:56
-LastEditTime: 2023-08-24 23:05:38
+LastEditTime: 2023-08-28 21:48:17
 LastEditors: facsert
 Description: 
 '''
 
-import asyncio
 from time import time
 from select import select
 from subprocess import Popen, PIPE, STDOUT
 
 
-def run(command, timeout=30):
+def run(command, view=True, timeout=0):
     '''
     Description: 执行 linux 命令, 实时打印输出
-    Param command str: 执行的 shell 指令
-    Param timeout int: 执行的 shell 指令超时时间
-    Return code int: 命令执行执行成功与否 
-           output str: 命令返回结果
+    Param  command str : 执行的 shell 指令
+    Param  view    bool: 是否显示执行过程
+    Param  timeout int : 执行的 shell 指令超时时间
+    Return code    int : 命令执行执行成功与否 
+           output  str : 命令返回结果
     Attention: 
+        若 timeout 设置 0 表示一直等到命令执行结束
     '''
-
     proc = Popen(
-        command, 
+        command,
         shell=True, 
         stdout=PIPE, 
-        stderr=STDOUT, 
+        stderr=STDOUT,
         text=True,
         bufsize=1
     )
     
-    print(command)
-    succ, line, output = False, "", ""
+    print(command) if view else False
+    succ, line, output = False, "", []
     end_time = time() + timeout
     
     while True:
@@ -40,21 +40,21 @@ def run(command, timeout=30):
         if readable:
             line = proc.stdout.readline()
             if line != '':
-                print(line, end='')
-                output += line
+                print(line, end='') if view else False
+                output.append(line)
         
         if line == '' and proc.poll() is not None:
             succ = int(proc.poll()) == 0
             break
 
-        if time() > end_time:
-            output += f"\nTimeourError: {command}"
+        if timeout > 0 and time() > end_time:
+            output.append(f"\nTimeourError: {command}")
             break
         
-    return succ, output
+    return succ, "".join(output)
 
 if __name__ == '__main__':
     # succ, output = run("top -n 5 -d 1 -b | grep %Cpu", 30)
-    succ, output = run("ping -c 5 localhost", 30)
-    succ, output = run("sleep 2;date", 30)
+    succ, output = run("ping -c 5 localhost")
+    succ, output = run("sleep 2;date")
     # print(output)

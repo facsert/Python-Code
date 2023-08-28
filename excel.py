@@ -1,7 +1,7 @@
 '''
 Author       : facsert
 Date         : 2023-08-14 10:43:49
-LastEditTime : 2023-08-14 15:32:04
+LastEditTime: 2023-08-28 20:49:01
 Description  : edit description
 '''
 
@@ -36,7 +36,7 @@ class Excel:
             self.head = self.read_head()
             return 
         
-        print(f'error mode {mode}, select r or w')
+        print(f'error mode {self.mode}, select r or w')
         exit()
 
     def cell_value(self, row, col):

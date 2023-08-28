@@ -1,17 +1,14 @@
 '''
 Author: facsert
 Date: 2023-08-23 20:34:57
-LastEditTime: 2023-08-27 23:44:58
+LastEditTime: 2023-08-28 21:54:41
 LastEditors: facsert
 Description: 
 '''
 
-import sys
 import socket
-from io import StringIO
 from time import time, sleep
-from re import search
-from select import select
+from textwrap import dedent
 from paramiko import SSHClient, AutoAddPolicy
 
 class Client:
@@ -25,6 +22,15 @@ class Client:
         self.client = self.connect()
         self.channel = self.client.invoke_shell()
 
+    def __repr__(self) -> str:
+        return dedent(f"""
+            host    : {self.host}
+            port    : {self.port}
+            username: {self.username}
+            password: {self.password}
+            timeout : {self.timeout}
+        """)
+
     def connect(self):
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy())
@@ -37,7 +43,7 @@ class Client:
         )
         return client
 
-    def exec(self, command, timeout=5):
+    def exec(self, command, timeout=5, view=True):
         """执行非交互式 linux 命令, 并实时打印
 
         Args:
@@ -54,11 +60,12 @@ class Client:
         Attention:
             
         """
-        print(command)
+        print(command) if view else False
         _, stdout, _ = self.client.exec_command(command, timeout=timeout)
         stdout.channel.set_combine_stderr(True)
 
         succ, output, end_time = False, [], time() + timeout
+        stdout.SEEK_END
         try:
             for line in stdout:
                 if line == "" and stdout.channel.exit_status_ready():
@@ -66,18 +73,19 @@ class Client:
                     break
 
                 output.append(line)
-                print(line, end="")
+                print(line, end="") if view else False
 
-                if time() > end_time:
+                if timeout > 0 and time() > end_time:
                     raise socket.timeout()
         except socket.timeout as e:
-            print(f"\nTimeoutError: {command}; \nReason: {e}")
-            output.append(f"\nTimeoutError: {command}; \nReason: {e}")
+            err_msg = f"\nTimeoutError: {command}; \nReason: {e}"
+            print(err_msg) if view else False
+            output.append(err_msg)
     
         return succ, "".join(output)
     
 
-    def shell(self, command, expect="", timeout=20, resp_timeout=3):
+    def shell(self, command, expect="", timeout=20, resp_timeout=3, view=True):
         """交互式命令执行
         Args:
             command str: linux 命令
@@ -94,7 +102,8 @@ class Client:
             若等待响应开始计时(resp > 0), 执行时间超过 timeout + resp_timeout 才算超时
             若命令一直有输出(响应计时 resp == 0), 执行 timeout 时间后退出
         """
-        self.channel.settimeout(timeout)
+        print(command) if view else False
+        self.channel.settimeout(timeout) 
         self.channel.sendall(command + '\n')
         resp_timeout = min(timeout, resp_timeout)
 
@@ -103,8 +112,8 @@ class Client:
             if self.channel.recv_ready():
                 data, buff = f"{buff}{self.channel.recv(65535).decode('utf-8')}", ""
                 lines, output = data.splitlines(True), f"{output}{data}"
-                [print(line, end="", flush=True) for line in lines[:-1]]
-                resp, buff = 0, lines[-1]
+                resp, buff, lines = 0, lines[-1], ([], lines[:-1])[view]
+                [print(line, end="", flush=True) for line in lines]
             else:
                 sleep(0.1)
                 resp += 0.1
@@ -113,7 +122,7 @@ class Client:
             
             end_time = (last_time + resp_timeout, last_time)[resp == 0]
             if time() > end_time:
-                print(f"TimeoutError: {command}")
+                print(f"TimeoutError: {command}") if view else False
                 output += f"\nTimeoutError: {command}"
                 break
 
@@ -126,15 +135,16 @@ class Client:
 
 if __name__ == "__main__":
     client = Client("192.168.1.103", 22, "root", "admin")
+    print(client)
     # success, output = client.exec("ls -al", 3)
     # success, output = client.exec("cat -n /Users/facsert/.zshrc", 5)
     # succ, output = client.exec("data; sleep 5;date", 3)
     # print(succ)
-    success, output = client.exec("ping -c 5 localhost", 8)
+    # success, output = client.exec("ping -c 5 localhost", 8)
     # success, output = client.exec("python3", 4)
 
 
-    print(output)
+    # print(output)
     # success, output = client.shell("ping -c 5 localhost", "127.0.0.1", 15)
     # succ, output = client.shell("python3")
     # succ, output = client.shell("a = 'hello'")

@@ -2,7 +2,7 @@
 '''
 Author: facsert
 Date: 2023-08-05 21:06:59
-LastEditTime: 2023-08-05 22:57:18
+LastEditTime: 2023-08-28 21:57:42
 LastEditors: facsert
 Description: 
 '''
@@ -20,6 +20,19 @@ from logging import (StreamHandler, FileHandler, Formatter, getLogger,
 # DEBUG = 10
 # NOTSET = 0
 
+def header(msg="title", level=3, length=50):
+    logger.info(("\n\n", "\n", "", "")[int(level)])
+    border = ("#", "=", "*", "-")[int(level)] * length
+    return logger.info(f"{border} {msg} {border}")
+
+def display(msg="checkpoint", succ=True):
+    if bool(succ):
+        logger.info(f"{msg:<80} [PASS]")
+    else:
+        logger.error(f"{msg:><80} [FAIL]")
+        exit() if succ is None else False
+    return msg
+
 class logger:
     """格式化打印内容
     
@@ -36,8 +49,9 @@ class logger:
     red = '\033[91m'
     yellow = '\033[93m'
     reset = '\033[0m'
-    file_format = "[%(levelname)-5s] %(asctime)s : %(message)s"
-    terminal_format = "[%(levelname)-5s] %(asctime)s : %(message)s"
+    date_format = "%Y-%m-%d %H:%M:%S"
+    file_format = "[%(levelname)-5s][%(asctime)s]: %(message)s"
+    terminal_format = "[%(levelname)-5s][%(asctime)s]: %(message)s"
     
     @classmethod
     def create_logger(cls, file="report.log", level="info"):
@@ -51,8 +65,8 @@ class logger:
         cls.remove_handler()
         cls.log = getLogger('log')
         cls.level = cls.get_level(level)
-        cls.handle_terminal(cls.level, cls.terminal_format)
-        cls.handle_file(file, cls.level, cls.file_format)
+        cls.handle_terminal(cls.level, cls.terminal_format, cls.date_format)
+        cls.handle_file(file, cls.level, cls.file_format, cls.date_format)
         cls.log.setLevel(cls.level)
 
     @classmethod
@@ -85,7 +99,7 @@ class logger:
         }.get(level.upper(), INFO)
         
     @classmethod
-    def handle_terminal(cls, level, format):
+    def handle_terminal(cls, level, format, datefmt):
         '''
         Description: 配置命令行打印控制器
         Param level str: 命令行显示 log 等级 
@@ -94,11 +108,11 @@ class logger:
         '''        
         handler = StreamHandler()
         handler.setLevel(level)
-        handler.setFormatter(Formatter(format))
+        handler.setFormatter(Formatter(format, datefmt))
         cls.log.addHandler(handler)
         
     @classmethod
-    def handle_file(cls, file, level, format):
+    def handle_file(cls, file, level, format, datefmt):
         '''
         Description: 配置文件打印控制器
         Param file str:  log 输出文件 
@@ -108,7 +122,7 @@ class logger:
         '''  
         handler = FileHandler(file)
         handler.setLevel(level)
-        handler.setFormatter(Formatter(format))
+        handler.setFormatter(Formatter(format, datefmt))
         cls.log.addHandler(handler)
         
     @classmethod
@@ -138,23 +152,21 @@ class logger:
         return msg
     
     @classmethod
-    def warning(cls, msg):
+    def debug(cls, msg):
         '''
-        Description: 打印 warning log, 命令行显示为黄色
+        Description: 打印 debug log, 命令行显示为黄色
         Param msg str: 打印内容 
         Return msg str: 打印内容 
         Attention: 
         '''   
         if cls.log is None:
             cls.create_logger()
-        cls.log.warning(f'{cls.yellow}{msg}{cls.reset}')
+        cls.log.debug(f'{cls.yellow}{msg}{cls.reset}')
         return msg
     
   
 if __name__ == '__main__':
-    logger.info( "info log")
-    logger.warning("warning log")
-    logger.create_logger("summary.log", "info")
-    logger.info( "inof log")
-    logger.error("error log")
+    title("level 0 title", 0)
+    display("pass", 1)
+    display("error", 0)
 
