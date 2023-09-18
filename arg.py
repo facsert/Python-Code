@@ -1,8 +1,8 @@
 '''
 Author: facsert
 Date: 2023-08-08 22:11:46
-LastEditTime : 2023-08-10 11:44:05
-LastEditors  : Please set LastEditors
+LastEditTime: 2023-08-29 21:35:11
+LastEditors: facsert
 Description: 
 '''
 
@@ -45,11 +45,11 @@ class Arg:
     
     @classmethod
     def prepare(cls):
-        cls.params = {}
-        cls.parse = None
         cls.args = ARGS
         cls.help = HELP
-    
+        cls.params = {}
+        cls.parse = None
+
     @classmethod
     def set_version(cls):
         cls.parse.add_argument(
@@ -77,7 +77,7 @@ class Arg:
     @classmethod
     def parse_args(cls):
         args = cls.parse.parse_args()
-        cls.params = {k: getattr(args, k) for k in vars(args)}  
+        cls.params = vars(args)
 
     @classmethod
     def main(cls):

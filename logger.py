@@ -2,7 +2,7 @@
 '''
 Author: facsert
 Date: 2023-08-05 21:06:59
-LastEditTime: 2023-08-28 21:57:42
+LastEditTime: 2023-08-29 21:38:04
 LastEditors: facsert
 Description: 
 '''
@@ -20,7 +20,7 @@ from logging import (StreamHandler, FileHandler, Formatter, getLogger,
 # DEBUG = 10
 # NOTSET = 0
 
-def header(msg="title", level=3, length=50):
+def title(msg="title", level=3, length=50):
     logger.info(("\n\n", "\n", "", "")[int(level)])
     border = ("#", "=", "*", "-")[int(level)] * length
     return logger.info(f"{border} {msg} {border}")

@@ -1,7 +1,7 @@
 '''
 Author: facsert
 Date: 2023-08-03 21:41:52
-LastEditTime: 2023-08-05 21:05:17
+LastEditTime: 2023-09-18 20:22:35
 LastEditors: facsert
 Description: 
 '''
@@ -20,7 +20,8 @@ class FlatDict(dict):
         super().__init__(*args, **kwargs)
         super().update(*args, **kwargs)
         self.flat = {}
-        self.separator = '.'
+        self.separator = "."
+        self.flat_dict(self)
 
     def update_dict(self, key, value):
         '''
@@ -109,24 +110,26 @@ class FlatDict(dict):
         self.flat = {}
         self.flat_dict(self)
 
+    def get(self, key, default=None):
+        return self.flat.get(key, default)
+
     def __str__(self):
         '''
         Description: json 格式原生字典
         Return srt: 字典字符串
         Attention: 
-        '''        
+        '''
         return dumps(self, indent=4)
 
 
 if __name__ == '__main__':
-    flat = FlatDict()
-    flat.update({
+    flat = FlatDict({
         'a': {
             'b': { 'c': 1 },
         },
         'e':3,    
     })
     print(flat['a.b'])
-    flat['a.c.d'] = 2
+    print(flat.get('a.c.d'))
     print(flat)
 
