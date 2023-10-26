@@ -1,15 +1,16 @@
 '''
 Author: facsert
 Date: 2023-08-07 20:44:56
-LastEditTime: 2023-08-28 21:48:17
-LastEditors: facsert
+LastEditTime : 2023-10-26 19:26:24
+LastEditors  : Please set LastEditors
 Description: 
 '''
 
-from time import time
+from time import time, sleep
 from select import select
 from subprocess import Popen, PIPE, STDOUT
-
+from fcntl import fcntl, F_GETFL, F_SETFL
+from os import O_NONBLOCK
 
 def run(command, view=True, timeout=0):
     '''
@@ -53,8 +54,56 @@ def run(command, view=True, timeout=0):
         
     return succ, "".join(output)
 
+
+class Terminal:
+
+    def __init__(self, cmd='bash'):
+        self.proc = Popen([cmd], stdin=PIPE, stdout=PIPE, stderr=PIPE, text=True, shell=True, bufsize=1)
+        self.pid = self.proc.pid
+
+    def non_block_read(self, stdout):
+        fd = stdout.fileno()
+        fl = fcntl(fd, F_GETFL)
+        fcntl(fd, F_SETFL, fl | O_NONBLOCK)
+        try:
+            return stdout.read()
+        except Exception as _:
+            return None
+        
+    def close(self):
+        self.proc.terminate()
+
+    def run(self, cmd, expect=None, resp_timeout=3, timeout=3, view=True):
+        print(cmd)
+        self.proc.stdin.write(f"{cmd}\n")
+        self.proc.stdin.flush()
+        resp_timeout = min(resp_timeout, timeout)
+        succ, output, resp, last_time = False, "", 0, time() + timeout
+        
+        while True:
+            data = self.non_block_read(self.proc.stdout)
+            if data is not None:
+                print(data, end='')
+                output = f"{output}{data}"
+                if expect is not None and expect in data:
+                    succ, resp = True, resp_timeout
+                else:
+                    resp = 0
+            else:
+                sleep(0.1)
+                resp += 0.1
+            if resp >= resp_timeout:
+                break
+
+            end_time = (last_time + resp_timeout, last_time)[resp == 0]
+            if time() > end_time:
+                print(f"TimeoutError: {cmd}") if view else False
+                output = f"{output}\nTimeoutError: {cmd}"
+                break
+            
+        return succ, "".join(output)
+
 if __name__ == '__main__':
-    # succ, output = run("top -n 5 -d 1 -b | grep %Cpu", 30)
-    succ, output = run("ping -c 5 localhost")
-    succ, output = run("sleep 2;date")
-    # print(output)
+    t = Terminal()
+    t.run("export name=petter")
+    t.run('echo "name: $name"')
