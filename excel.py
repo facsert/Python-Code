@@ -1,13 +1,10 @@
 '''
 Author       : facsert
 Date         : 2023-08-14 10:43:49
-LastEditTime: 2023-08-28 22:24:56
+LastEditTime: 2023-09-27 21:19:44
 Description  : edit description
 '''
-
 from openpyxl import load_workbook, Workbook
-from json import dumps
-from toml import dump, load
 
 class Excel:
     
@@ -25,6 +22,10 @@ class Excel:
             raise RuntimeError(f"error: {e_value}\n")
     
     def mode_init(self):
+        """ 模式初始化
+            'w' 新建 excel 表格 
+            'r' 读取 excel 表格
+        """
         if self.mode.lower() == 'w':
             self.wb = Workbook()
             self.sheet = self.wb.active
@@ -40,16 +41,23 @@ class Excel:
         exit()
 
     def cell_value(self, row, col):
+        """ 通过坐标读取值 """
         return self.sheet.cell(row=row, column=col).value
     
     def set_cell(self, row, col, value):
+        """ 通过坐标写入值 """
         self.sheet.cell(row, col).value = value
         
     def read_head(self):
+        """ 读取表格表头 """
         max_col = self.sheet.max_column + 1
         return [self.cell_value(1, col) for col in range(1, max_col)]
     
     def select_column(self, select, key=None):
+        """ 选择属性对应的列 
+            select 筛选需要输出的列
+
+        """
         if len(select) == 0:
             select = self.head
             
@@ -64,6 +72,9 @@ class Excel:
         return [self.head.index(k) for k in select if k in self.head]
     
     def excel_to_list(self, select=[]):
+        """ 读取表格生成列表 
+            select 筛选需要读取的列
+        """
         indexs = self.select_column(select)
         excel_list = []
         
@@ -75,6 +86,10 @@ class Excel:
         return excel_list
         
     def excel_to_dict(self, key, select=[]):
+        """ 读取表格生成字典, 一行一个字典
+            key 指定改行转成字典的 key
+            select 筛选需要输出的键值对
+        """
         indexs = self.select_column(select, key)
         excel_dict = {}
         
@@ -88,6 +103,10 @@ class Excel:
         return dict(sorted(excel_dict.items()))
     
     def list_to_excel(self, lst, select=[]):
+        """ 列表生成表格 
+            lst list[dict]: 字典列表
+            select 筛选需要输出的列
+        """
         try:
             self.head = list(lst[0].keys())
         except Exception as e:
@@ -102,6 +121,10 @@ class Excel:
         self.wb.save(self.file)
         
     def dict_to_excel(self, dic, select=[]):
+        """字典生成表格
+           dic dict[dict]: 双层字典
+           select 需要写入表格的键值对
+        """
         try:
             self.head = list(list(dic.values())[0].keys())
         except Exception as e:

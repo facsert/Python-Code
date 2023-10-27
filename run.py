@@ -1,12 +1,12 @@
 '''
 Author: facsert
 Date: 2023-08-07 20:44:56
-LastEditTime: 2023-08-28 21:48:17
+LastEditTime: 2023-10-27 21:58:20
 LastEditors: facsert
 Description: 
 '''
 
-from time import time
+from time import time, sleep
 from select import select
 from subprocess import Popen, PIPE, STDOUT
 
@@ -54,7 +54,5 @@ def run(command, view=True, timeout=0):
     return succ, "".join(output)
 
 if __name__ == '__main__':
-    # succ, output = run("top -n 5 -d 1 -b | grep %Cpu", 30)
-    succ, output = run("ping -c 5 localhost")
-    succ, output = run("sleep 2;date")
-    # print(output)
+    pass
+
