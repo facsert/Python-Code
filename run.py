@@ -1,14 +1,8 @@
 '''
 Author: facsert
 Date: 2023-08-07 20:44:56
-<<<<<<< HEAD
-LastEditTime: 2023-10-27 22:02:08
+LastEditTime: 2023-10-27 22:06:24
 LastEditors: facsert
-=======
-LastEditTime : 2023-10-26 19:26:24
-LastEditors  : Please set LastEditors
->>>>>>> 0c368cc9527c6bed4609aae68fc4092c8cf9e509
-Description: 
 '''
 
 from time import time, sleep
