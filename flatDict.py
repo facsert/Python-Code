@@ -1,8 +1,8 @@
 '''
 Author: facsert
 Date: 2023-08-03 21:41:52
-LastEditTime: 2023-09-18 20:22:35
-LastEditors: facsert
+LastEditTime : 2023-11-08 17:50:49
+LastEditors  : Please set LastEditors
 Description: 
 '''
 
@@ -31,15 +31,22 @@ class FlatDict(dict):
         Return: None
         Attention: 
         '''        
-        dic = self
-        keys = key.split(self.separator)
+        keys, curr = key.split(self.separator), self
         for k in keys[:-1]:
-            dic.setdefault(k, {})
-            if not isinstance(dic[k], dict):
-                dic.update({k: {}})
-            dic = dic[k]
+            if isinstance(curr, list):
+                curr = curr[int(k)]
+                continue
 
-        dic[keys[-1]] = value
+            ret = curr.setdefault(k, {})
+            if not isinstance(ret, dict):
+                curr.update({k: {}})
+            curr = curr[k]
+        
+        if isinstance(curr, list):
+            curr[int(keys[-1])] = value
+        else:
+            curr[keys[-1]] = value
+
         self.flat_dict(self)
 
     def flat_dict(self, dic, parent_key=''):
@@ -50,10 +57,15 @@ class FlatDict(dict):
         Return: None
         Attention: 任一层的字典 key value 都要保存
         '''        
-        for key, value in dic.items():
-            new_key = f"{parent_key}{self.separator}{key}" if parent_key else key
-            self.flat[new_key] = value
-            if isinstance(value, dict):
+        if isinstance(data, dict) or isinstance(data, list) or isinstance(data, tuple):
+            try:
+                group = data.items()
+            except AttributeError as e:
+                group = enumerate(data)
+
+            for key, value in group:
+                new_key = f"{parent_key}{self.separator}{key}" if parent_key else key
+                self.flat[new_key] = value
                 self.flat_dict(value, new_key)
 
     def __setitem__(self, key, value):
