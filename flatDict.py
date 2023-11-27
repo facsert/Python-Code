@@ -1,8 +1,8 @@
 '''
 Author: facsert
 Date: 2023-08-03 21:41:52
-LastEditTime : 2023-11-08 17:50:49
-LastEditors  : Please set LastEditors
+LastEditTime: 2023-11-27 21:12:18
+LastEditors: facsert
 Description: 
 '''
 
@@ -30,18 +30,21 @@ class FlatDict(dict):
         Param value Any: 字典 value
         Return: None
         Attention: 
-        '''        
+        '''
+
         keys, curr = key.split(self.separator), self
         for k in keys[:-1]:
             if isinstance(curr, list):
                 curr = curr[int(k)]
                 continue
-
+                        
             ret = curr.setdefault(k, {})
-            if not isinstance(ret, dict):
-                curr.update({k: {}})
-            curr = curr[k]
-        
+            if isinstance(ret, list) or isinstance(ret, dict):
+                curr = curr[k]
+                continue
+            
+            curr.update({k: {}})
+
         if isinstance(curr, list):
             curr[int(keys[-1])] = value
         else:
@@ -136,12 +139,18 @@ class FlatDict(dict):
 
 if __name__ == '__main__':
     flat = FlatDict({
-        'a': {
-            'b': { 'c': 1 },
-        },
+        'a': [
+            {'a': 1, 'b': [1,2,3]},
+            {'a': 1},
+        ],
         'e':3,    
     })
-    print(flat['a.b'])
-    print(flat.get('a.c.d'))
-    print(flat)
+    print(flat['a'])
+    # print(flat['a.b'])
+    # print(flat.get('a.c'))
+    flat['a.1.b'] = 0
+    flat['a.1.a'] = 0
+    print(flat['a'])
+    # print(flat.get('a.c'))
+    
 
