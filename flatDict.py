@@ -49,7 +49,7 @@ class FlatDict(dict):
 
         self.flat_dict(self)
 
-    def flat_dict(self, dic, parent_key=''):
+    def flat_dict(self, data, parent_key=''):
         '''
         Description: 原生字典多层 key 通过分隔符连接写入 flat 字典
         Param dic dict: 原生字典
