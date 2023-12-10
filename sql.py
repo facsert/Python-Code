@@ -1,7 +1,7 @@
 '''
 Author: facsert
 Date: 2023-12-07 22:52:01
-LastEditTime: 2023-12-10 20:57:19
+LastEditTime: 2023-12-10 21:08:54
 LastEditors: facsert
 Description: 
 '''
@@ -17,6 +17,51 @@ engine = create_engine(f"sqlite:///{path}",
 Base = declarative_base()
 Base.metadata.create_all(engine, checkfirst=True)
 
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    age = Column(Integer)
+    
+    def __repr__(self):
+        return f"<User(id={self.id}, name={self.name}, age={self.age})>"
+
+# sqlalchemy 1.x query 接口封装  
+class DB:
+    
+    def __new__(cls) -> None:
+        cls.session = sessionmaker(bind=engine)()
+
+    @classmethod    
+    def add(cls, *lines: Base):
+        cls.session.add_all(list(lines))
+        cls.session.commit()
+
+    @classmethod    
+    def select(cls, table: Base, expression: str, first: bool=False):
+        table = cls.session.query(table)
+        array = table.filter(eval(expression)) if expression else table        
+        return array.first() if first else array
+
+    @classmethod    
+    def update(cls, table: Base, expression:str, target:dict, first: bool=False): 
+        if first:
+            line, key, value = cls.select(table, expression, True), target.popitem()
+            setattr(line, key, value)
+        else:
+            cls.session.query(table).filter(eval(expression)).update(target)
+        cls.session.commit()
+
+    @classmethod    
+    def delete(cls, table: Base, expression:str, first: bool=False):
+        if first:
+            cls.session.delete(cls.select(table, expression, True))
+        else:
+            cls.session.query(table).filter(eval(expression)).delete()
+        cls.session.commit()
+        
+# sqlalchemy 2.x insert delect update select接口封装
 class DB:
     def __new__(cls) -> None:
         cls.session = Session(engine)
@@ -47,50 +92,6 @@ class DB:
         array = cls.session.execute(delete(table).where(eval(expr)).returning(table))
         cls.session.commit()
         return array.all()
-    
-# class DB:
-    
-#     def __new__(cls) -> None:
-#         cls.session = sessionmaker(bind=engine)()
-
-#     @classmethod    
-#     def add(cls, *lines: Base):
-#         cls.session.add_all(list(lines))
-#         cls.session.commit()
-
-#     @classmethod    
-#     def select(cls, table: Base, expression: str, first: bool=False):
-#         table = cls.session.query(table)
-#         array = table.filter(eval(expression)) if expression else table        
-#         return array.first() if first else array
-
-#     @classmethod    
-#     def update(cls, table: Base, expression:str, target:dict, first: bool=False): 
-#         if first:
-#             line, key, value = cls.select(table, expression, True), target.popitem()
-#             setattr(line, key, value)
-#         else:
-#             cls.session.query(table).filter(eval(expression)).update(target)
-#         cls.session.commit()
-
-#     @classmethod    
-#     def delete(cls, table: Base, expression:str, first: bool=False):
-#         if first:
-#             cls.session.delete(cls.select(table, expression, True))
-#         else:
-#             cls.session.query(table).filter(eval(expression)).delete()
-#         cls.session.commit()
-
-class User(Base):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    age = Column(Integer)
-    
-    def __repr__(self):
-        return f"<User(id={self.id}, name={self.name}, age={self.age})>"
-    
 
 if __name__ == "__main__":
     DB()
