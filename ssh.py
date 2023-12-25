@@ -8,8 +8,7 @@ Description:
 
 import socket
 from time import time, sleep
-from json import dumps
-from textwrap import dedent
+from json import dumps, load
 from paramiko import SSHClient, AutoAddPolicy
 
 class Client:
@@ -83,7 +82,7 @@ class Client:
         return succ, "".join(output)
     
 
-    def shell(self, command, expect="", timeout=20, resp_timeout=3, view=True):
+    def run(self, command, expect="", timeout=20, resp_timeout=3, view=True):
         """交互式命令执行
         Args:
             command str: linux 命令
@@ -110,9 +109,11 @@ class Client:
                 data, buff = f"{buff}{self.channel.recv(65535).decode('utf-8', 'ignore')}", ""
                 lines, output = data.splitlines(True), f"{output}{data}"
                 buff, lines, resp = ("", lines, 0) if data.endswith('\n') else (lines[-1], lines[:-1], 0)
+
                 for line in lines:
                     print(line.rstrip()) if view else False
                     resp = resp_timeout if expect != "" and expect in line else resp
+
             else:
                 sleep(0.1)
                 resp += 0.1
@@ -125,10 +126,6 @@ class Client:
                 output += f"\nTimeoutError: {command}"
                 break
         return expect in output, output
-
-
-    def sftp(self):
-        return self.sftp
     
     def set_env_var(self, variable, value, view=False):
         """ 设置环境变量
@@ -143,7 +140,7 @@ class Client:
             前后打印环境变量值不同则判定环境变量设置成功
         """
         cmd = f'export {variable}={value}; echo "${variable}, code: $?"'
-        succ, output = self.run(cmd, "code: 0", resp_timeout=1, view=view)
+        succ, _ = self.run(cmd, "code: 0", resp_timeout=1, view=view)
 
         if succ:
             print(f"set environmet {variable}:{value}")
@@ -160,7 +157,7 @@ class Client:
           succ bool: 切换成功
         """
         cmd = f'cd {path}; echo $PWD, code: $?'
-        succ, output = self.run(cmd, "code: 0", resp_timeout=1, view=False)
+        succ, _ = self.run(cmd, "code: 0", resp_timeout=1, view=False)
         if succ:
             print(f"change dir to {path}")
         else:
@@ -182,7 +179,7 @@ class Client:
 
         check = f"ps -eaf | grep -E {key} | grep -v grep"
         kill = check + "|awk '{print $2}' | xargs kill -9"
-        father_kill = check + "|awk '{print $3}' | xargs kill -9"
+        father_kill = check + "|awk '{print $3}' | xargs kill -15"
         while retry:
             proc_alive, _ = self.exec(check, timeout=10, view=view)
             self.exec((kill, father_kill)[retry < 5], timeout=10, view=view)
@@ -218,9 +215,3 @@ if __name__ == "__main__":
     client = Client("192.168.1.103", 22, "root", "admin")
     succ, output = client.exec("touch ssh.log")
     print(succ, output)
-    # success, output = client.exec("ls -al", 3)
-    # success, output = client.exec("cat -n /Users/facsert/.zshrc", 5)
-    # succ, output = client.exec("data; sleep 5;date", 3)
-    # print(succ)
-    # success, output = client.exec("ping -c 5 localhost", 8)
-    # success, output = client.exec("python3", 4)
