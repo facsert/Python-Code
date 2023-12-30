@@ -9,6 +9,8 @@ Description:
 import socket
 from time import time, sleep
 from json import dumps, load
+
+from loguru import logger
 from paramiko import SSHClient, AutoAddPolicy
 
 class Client:
@@ -22,7 +24,6 @@ class Client:
         self.client = self.connect()
         self.channel = self.client.invoke_shell()
         self.sftp = self.client.open_sftp()
-        
 
     def __repr__(self) -> str:
         return dumps(vars(self), indent=4)
@@ -60,7 +61,7 @@ class Client:
         Attention:
             
         """
-        print(command) if view else False
+        logger.info(command)
         _, stdout, _ = self.client.exec_command(command, timeout=timeout)
         stdout.channel.set_combine_stderr(True)
         succ, output, end_time = False, [], time() + timeout
@@ -72,12 +73,12 @@ class Client:
                     break
 
                 output.append(line)
-                print(line, end="") if view else False
+                logger.info(line.rstrip()) if view else False
                 if timeout > 0 and time() > end_time:
                     raise socket.timeout()
         except socket.timeout as e:
             err_msg = f"\nTimeoutError: {command}; \nReason: {e}"
-            print(err_msg)
+            logger.error(err_msg)
             output.append(err_msg)
         return succ, "".join(output)
     
@@ -111,9 +112,8 @@ class Client:
                 buff, lines, resp = ("", lines, 0) if data.endswith('\n') else (lines[-1], lines[:-1], 0)
 
                 for line in lines:
-                    print(line.rstrip()) if view else False
+                    logger.info(line.rstrip()) if view else False
                     resp = resp_timeout if expect != "" and expect in line else resp
-
             else:
                 sleep(0.1)
                 resp += 0.1
@@ -122,7 +122,7 @@ class Client:
             
             end_time = (last_time + resp_timeout, last_time)[resp == 0]
             if time() > end_time:
-                print(f"TimeoutError: {command}") if view else False
+                logger.error(f"TimeoutError: {command}") if view else False
                 output += f"\nTimeoutError: {command}"
                 break
         return expect in output, output
@@ -143,9 +143,9 @@ class Client:
         succ, _ = self.run(cmd, "code: 0", resp_timeout=1, view=view)
 
         if succ:
-            print(f"set environmet {variable}:{value}")
+            logger.info(f"set environmet {variable}:{value}")
         else:
-            print(f"set environmet {variable} to {value} fail")
+            logger.error(f"set environmet {variable} to {value} fail")
         return succ
     
     def chdir(self, path):
@@ -159,9 +159,9 @@ class Client:
         cmd = f'cd {path}; echo $PWD, code: $?'
         succ, _ = self.run(cmd, "code: 0", resp_timeout=1, view=False)
         if succ:
-            print(f"change dir to {path}")
+            logger.info(f"change dir to {path}")
         else:
-            print(f"change dir to {path} fail")
+            logger.error(f"change dir to {path} fail")
         return succ
     
     def kill_proc(self, key, view=False, retry=30):
@@ -178,7 +178,7 @@ class Client:
         """
 
         check = f"ps -eaf | grep -E {key} | grep -v grep"
-        kill = check + "|awk '{print $2}' | xargs kill -9"
+        kill = check + "|awk '{print $2}' | xargs kill -15"
         father_kill = check + "|awk '{print $3}' | xargs kill -15"
         while retry:
             proc_alive, _ = self.exec(check, timeout=10, view=view)
@@ -206,7 +206,7 @@ class Client:
             with self.sftp.open(file, 'w') as f:
                 f.write(dumps(dic, indent=4))
         except Exception as e:
-            print(f"update {file} failed: {e}")
+            logger.info(f"update {file} failed: {e}")
         return True
 
         
@@ -214,4 +214,4 @@ class Client:
 if __name__ == "__main__":
     client = Client("192.168.1.103", 22, "root", "admin")
     succ, output = client.exec("touch ssh.log")
-    print(succ, output)
+    logger.info(succ, output)
