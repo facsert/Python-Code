@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 '''
 Author: facsert
 Date: 2023-08-05 21:06:59
@@ -19,19 +19,6 @@ from logging import (StreamHandler, FileHandler, Formatter, getLogger,
 # INFO = 20
 # DEBUG = 10
 # NOTSET = 0
-
-def title(msg="title", level=3, length=50):
-    logger.info(("\n\n", "\n", "", "")[int(level)])
-    border = ("#", "=", "*", "-")[int(level)] * length
-    return logger.info(f"{border} {msg} {border}")
-
-def display(msg="checkpoint", succ=True):
-    if bool(succ):
-        logger.info(f"{msg:<80} [PASS]")
-    else:
-        logger.error(f"{msg:><80} [FAIL]")
-        exit() if succ is None else False
-    return msg
 
 class logger:
     """格式化打印内容
@@ -163,10 +150,4 @@ class logger:
             cls.create_logger()
         cls.log.debug(f'{cls.yellow}{msg}{cls.reset}')
         return msg
-    
-  
-if __name__ == '__main__':
-    title("level 0 title", 0)
-    display("pass", 1)
-    display("error", 0)
 

@@ -16,6 +16,9 @@ from loguru import  logger
 class Process:
     """ 使用 gevent 无阻塞执行命令 """
     
+    def __init__(self):
+        self.proc = None
+    
     @staticmethod
     def exec(command, timeout=None, view=True):
         """ 
@@ -58,8 +61,7 @@ class Process:
         
         return succ, output
     
-    @classmethod
-    def create(cls, command, expect, resp_timeout=5, timeout=30, view=True):
+    def create(self, command, expect, resp_timeout=5, timeout=30, view=True):
         """ 
         Description: 创建交互式命令 执行
           Param  command str : 执行指令字符串
@@ -72,7 +74,7 @@ class Process:
           succ    str : 输出是否包含 expect
           output  str : 命令返回结果
         """
-        cls.proc = gevent.subprocess.Popen(
+        self.proc = gevent.subprocess.Popen(
             command,
             shell=True,
             stdin=gevent.subprocess.PIPE,
@@ -81,16 +83,14 @@ class Process:
             text=True,
         )
         logger.info(command)
-        succ, output = cls.read(expect, resp_timeout, timeout, view)
+        succ, output = self.read(expect, resp_timeout, timeout, view)
         return succ, output 
     
-    @classmethod
-    def close(cls):
+    def close(self):
         """ 关闭进程 """
-        cls.proc.kill()
+        self.proc.kill()
 
-    @classmethod
-    def send(cls, command, expect, resp_timeout=5, timeout=30, view=True):
+    def send(self, command, expect, resp_timeout=5, timeout=30, view=True):
         """ 
         Description: 交互式进程写入命令
           Param  command str : 写入管道的命令
@@ -104,13 +104,12 @@ class Process:
           output  str : 命令返回结果  
         """
         logger.info(command)
-        cls.proc.stdin.write(f"{command}\n")
-        cls.proc.stdin.flush()
-        succ, output = cls.read(expect, resp_timeout, timeout, view)
-        return succ, output 
-    
-    @classmethod
-    def read(cls, expect, resp_timeout=5, timeout=30, view=True):
+        self.proc.stdin.write(f"{command}\n")
+        self.proc.stdin.flush()
+        succ, output = self.read(expect, resp_timeout, timeout, view)
+        return succ, output
+
+    def read(self, expect, resp_timeout=5, timeout=30, view=True):
         """ 
         Description: 读取交互式进程的输出
           Param  expect str  : 命令输出期望, 输出行出现预期则退出
@@ -127,14 +126,14 @@ class Process:
         while True:
             try:
                 with Timeout(resp_timeout, TimeoutError):
-                    cls.proc.stdout.flush()
-                    line = cls.proc.stdout.readline()
+                    self.proc.stdout.flush()
+                    line = self.proc.stdout.readline()
             except TimeoutError:
                 logger.error("block TimeoutError")
                 output = f"{output}\nBlock TimeourError"
                 break
             
-            if line == "" and cls.proc.poll() is not None:
+            if line == "" and self.proc.poll() is not None:
                 break
             
             if line != "":
@@ -148,7 +147,7 @@ class Process:
                 logger.error("\nRun command timeout")
                 output = f"{output}\nTimeourError"
                 break
-        return succ, output  
+        return succ, output
 
 if __name__ == '__main__':
     Process.exec("ping -c 3 127.0.0.1")

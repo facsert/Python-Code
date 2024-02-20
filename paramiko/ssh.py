@@ -14,6 +14,7 @@ from loguru import logger
 from paramiko import SSHClient, AutoAddPolicy
 
 class Client:
+    """ paramiko ssh 远程操作 """
 
     def __init__(self, host, port, username, password, timeout=30):
         self.host = host
@@ -29,18 +30,20 @@ class Client:
         return dumps(vars(self), indent=4)
 
     def connect(self):
+        """ ssh连接 """
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy())
         client.connect(
-            self.host, 
-            self.port, 
-            self.username, 
-            self.password, 
+            self.host,
+            self.port,
+            self.username,
+            self.password,
             timeout=self.timeout
         )
         return client
     
     def close(self):
+        """ 断开所有连接 """
         self.channel.close()
         self.client.close()
 
@@ -59,7 +62,6 @@ class Client:
             output str: 命令执行返回值
 
         Attention:
-            
         """
         logger.info(command)
         _, stdout, _ = self.client.exec_command(command, timeout=timeout)
@@ -81,9 +83,9 @@ class Client:
             logger.error(err_msg)
             output.append(err_msg)
         return succ, "".join(output)
-    
 
-    def run(self, command, expect="", timeout=20, resp_timeout=3, view=True):
+
+    def run(self, command, expect=None, resp_timeout=3, timeout=20, view=True):
         """交互式命令执行
         Args:
             command str: linux 命令
@@ -104,16 +106,17 @@ class Client:
         self.channel.sendall(command + '\n')
         resp_timeout = min(timeout, resp_timeout)
 
-        buff, output, resp, last_time = "", '', 0, time() + timeout
+        buff, output, resp, last_time = "", [], 0, time() + timeout
         while True:
             if self.channel.recv_ready():
-                data, buff = f"{buff}{self.channel.recv(65535).decode('utf-8', 'ignore')}", ""
-                lines, output = data.splitlines(True), f"{output}{data}"
-                buff, lines, resp = ("", lines, 0) if data.endswith('\n') else (lines[-1], lines[:-1], 0)
+                data = f"{buff}{self.channel.recv(10).decode('utf-8', 'ignore')}"
+                lines, resp = data.splitlines(True), 0
+                buff, lines = ("", lines) if data.endswith('\n') else (lines[-1], lines[:-1])
+                output.extend(lines)
 
                 for line in lines:
                     logger.info(line.rstrip()) if view else False
-                    resp = resp_timeout if expect != "" and expect in line else resp
+                    resp = resp_timeout if expect and expect in line else resp
             else:
                 sleep(0.1)
                 resp += 0.1
@@ -123,8 +126,10 @@ class Client:
             end_time = (last_time + resp_timeout, last_time)[resp == 0]
             if time() > end_time:
                 logger.error(f"TimeoutError: {command}") if view else False
-                output += f"\nTimeoutError: {command}"
+                output.append(f"\nTimeoutError: {command}")
                 break
+            
+        output = "".join(output)
         return expect in output, output
     
     def set_env_var(self, variable, value, view=False):
@@ -209,7 +214,6 @@ class Client:
             logger.info(f"update {file} failed: {e}")
         return True
 
-        
 
 if __name__ == "__main__":
     client = Client("192.168.1.103", 22, "root", "admin")
