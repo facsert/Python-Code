@@ -1,7 +1,6 @@
 """
 description: fastapi 
 """
-from os.path import dirname
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -12,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils.logger import logger_setting
 from utils.router import add_routers
 from utils.db import Database
+from utils.middleware import add_middlewares
 
 HOST = "localhost"
 PORT = 8001
@@ -34,13 +34,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+add_middlewares(app)
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host=HOST, port=PORT, reload=True)
