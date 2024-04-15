@@ -1,14 +1,34 @@
 from datetime import datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from loguru import logger
-from loguru import logger
+from psycopg import Cursor
 
 from utils import schemas
 from utils.db import Nodes
+from utils.db import Database
 
 
 router = APIRouter()
+created: Cursor = Database.create_session
+
+
+@router.get('/nodes')
+def get_nodes(session: Cursor = Depends(created)):
+    """ 获取节点列表 """
+    array = session.execute("select * from person").fetchall()
+    logger.info(array)
+    return array
+
+
+@router.post('/nodes')
+def add_nodes(node: schemas.NodeAdd, session: Cursor = Depends(created)):
+    """ 获取节点列表 """
+    node = node.model_dump()
+    sql = "INSERT INTO person (name, age) VALUES(%(name)s, %(age)s);"
+    cur = session.execute(sql, node)
+    logger.info(f"Count:{cur.rowcount} Msg:{cur.statusmessage}")
+    return cur.statusmessage
 
 @router.get('/list')
 def list_nodes():
