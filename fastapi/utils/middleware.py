@@ -26,4 +26,3 @@ def add_middlewares(app: FastAPI):
             logger.error(f"Error {type(e).__name__}: {e}")
             logger.error(format_exc())
             return JSONResponse(status_code=500, content={"message": "Server run error"})
-

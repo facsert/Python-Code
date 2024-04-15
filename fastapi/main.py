@@ -1,22 +1,17 @@
-"""
-description: fastapi 
-"""
 import sys
-import socket
 from os.path import dirname
 from contextlib import asynccontextmanager
 
 import uvicorn
 from loguru import logger
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.append(dirname(__file__))
 from utils.logger import logger_setting
 from utils.router import add_routers
 from utils.middleware import add_middlewares
 
-HOST = socket.gethostbyname(socket.gethostname()).strip()
+HOST = 'localhost'
 PORT = 8001
 
 @asynccontextmanager
