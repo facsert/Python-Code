@@ -47,7 +47,7 @@ class Database:
                 name VARCHAR(255) NOT NULL,
                 age INTEGER NOT NULL,
                 locked BOOLEAN NOT NULL DEFAULT FALSE,
-                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
             );
         """)
         session.close()
@@ -60,4 +60,3 @@ class Database:
     def init(cls):
         cls.connect_database()
         cls.create_tables()
-
