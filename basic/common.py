@@ -1,10 +1,12 @@
 from time import sleep
+from os import walk
 from platform import system
 from os.path import join, dirname
 
+
 from loguru import logger
 
-def title(msg="title", level=3, length=50):
+def title(msg: str="title", level:int=3, length: int=50) -> str:
     """ 标题打印 """
     index = int(level) % 3
     logger.info(("\n\n", "\n", "", "")[index])
@@ -13,7 +15,7 @@ def title(msg="title", level=3, length=50):
     return msg
 
 
-def display(msg="checkpoint", succ=True):
+def display(msg: str="checkpoint", succ: bool=True) -> str:
     """ 结果打印 """
     if bool(succ):
         logger.info(f"{msg:<80} [PASS]")
@@ -22,7 +24,7 @@ def display(msg="checkpoint", succ=True):
     return msg
 
 
-def abs_dir(*path, platform=None):
+def abs_dir(*path: str, platform: str|None =None) -> str:
     """ 以项目根路径作为相对路径基准拼接
     Param path str      : 相对路径或绝对路径
     Param platform str  : 根据平台变更拼接方式(linux, windows)
@@ -33,7 +35,7 @@ def abs_dir(*path, platform=None):
     sep = {'linux': '/', 'windows': '\\'}.get(platform.lower(), '/')
     return abs_path.replace("/", sep).replace("\\", sep)
 
-def wait(delay=1, length=50):
+def wait(delay: int=1, length: int=50) -> int:
     """ 等待进度条 """
     use = 0
     while use < delay:
@@ -45,6 +47,12 @@ def wait(delay=1, length=50):
     print(f"Please wait {delay}s [{'#' * (length)}] {delay - use:>4}s")
     return delay
 
+
+def listdir(path: str) -> iter:
+    """ 获取目录下所有文件 """
+    for root, _, files in walk(path):
+        for file in files:
+            yield join(root, file)
     
 if __name__ == '__main__':
     wait(10)

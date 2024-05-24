@@ -13,15 +13,10 @@ def abs_dir(*path, os=""):
            abs str  : 绝对路径
     Attention: 参数 path 相对路径必须相对于 pytest 根目录(run.py 同级目录)
     """
-
-    dir = join("", *path)
-    if not isabs(dir):
-        dir = join(dirname(dirname(__file__)), dir)
-
-    os = system().lower() if len(os) == 0 else os
-    dir = dir.replace("/", "\\") if os == "windows" else dir
-    dir = dir.replace("\\", "/") if os == "linux" else dir
-    return dir
+    platform = system() if platform is None else platform
+    abs_path = join(dirname(dirname(__file__)), join("", *path))
+    sep = {'linux': '/', 'windows': '\\'}.get(platform.lower(), '/')
+    return abs_path.replace("/", sep).replace("\\", sep)
 
 
 def json_load(path):

@@ -109,7 +109,7 @@ class Client:
         buff, output, resp, last_time = "", [], 0, time() + timeout
         while True:
             if self.channel.recv_ready():
-                data = f"{buff}{self.channel.recv(10).decode('utf-8', 'ignore')}"
+                data = f"{buff}{self.channel.recv(65535).decode('utf-8', 'ignore')}"
                 lines, resp = data.splitlines(True), 0
                 buff, lines = ("", lines) if data.endswith('\n') else (lines[-1], lines[:-1])
                 output.extend(lines)

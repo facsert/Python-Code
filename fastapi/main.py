@@ -9,7 +9,7 @@ from fastapi import FastAPI
 
 from utils.logger import logger_setting
 from utils.router import add_routers
-from utils.db import Database
+from utils.database import Database
 from utils.middleware import add_middlewares
 
 
