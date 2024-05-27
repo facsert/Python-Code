@@ -5,7 +5,8 @@ from re import search
 from collections import defaultdict
 
 class LogParse:
-    
+    """ 日志检查 """
+
     def __init__(self, file_name):
         self.name = file_name
         self.repeat_timestamp = defaultdict(list)
@@ -15,7 +16,7 @@ class LogParse:
         self.repeat_cache = {}
         self.fuzzy_cache = {}
         self.counter = defaultdict(int)
-    
+
     def read_file(self):
         heads = ['filename', 'filter', 'level', 'timestamp', 'index', 'count', 'log']
         self.csv = csv.DictWriter(open(f'{self.name}.csv', 'w', newline=''), fieldnames=heads)
@@ -32,22 +33,22 @@ class LogParse:
         self.whitelist(line)
         self.slice_repeat(line, 5, 3)
         self.fuzzy_repeat(line, '[GET]',5, 3)
-        
+
     def slice_repeat(self, line, time_threshold, count_threshold):
         """ 筛选在 time_threshold 时间内, 出现超过 count_threshold 次的 log """
-        
+
         # 删除不在时间片段内的 log, 并对 log 重新计数
         for old_timestamp in self.repeat_timestamp:
             if (self.timestamp - old_timestamp).seconds < time_threshold:
                 continue
-            
+
             for item in self.repeat_timestamp[old_timestamp]:
                 self.repeat_logcount[item[34:]] -= 1
-        
+
         # 合并相同时间点 log, 并对 log 计数
         self.repeat_timestamp[self.timestamp].append(line)
         self.repeat_logcount[self.msg] += 1
-        
+
         if self.repeat_logcount[self.msg] >= count_threshold:
             if self.repeat_cache.get(self.msg, None) is None:
                 self.repeat_cache[self.msg] = {'filename': self.name, 'level': self.level, 
@@ -71,7 +72,7 @@ class LogParse:
 
         self.fuzzy_timestamp[self.timestamp].append(line)
         self.fuzzy_logcount[regex] += 1
-        
+
         if self.fuzzy_logcount[regex] >= count_threshold:
             if self.repeat_cache.get(regex, None) is None:
                 self.repeat_cache[regex] = {'filename': self.name, 'level': self.level, 
@@ -92,7 +93,7 @@ class LogParse:
                 'count': item['count'], 'index': self.counter['repeat'],
                 'timestamp': f"{item['start']} {item['close']}", 'log': content,
             })
-                
+
     def blacklist(self, line, blacks):
         """ log 存在黑名单内容 """
         for key in blacks:
@@ -104,7 +105,7 @@ class LogParse:
                     'timestamp': self.timestamp, 'log': line,
                 })
                 return
-            
+
     def whitelist(self, line, whits):
         """ log 不包含白名单任意内容 """
         if not any([key in line for key in whits]):
@@ -114,7 +115,7 @@ class LogParse:
                 'count': 1, 'index': self.counter['whitelist'],
                 'timestamp': self.timestamp, 'log': line,
             })
-    
+
     def fuzzy_match(self, line, regex):
         """ log 包含模糊匹配内容 """
         match = search(regex, line)
@@ -124,6 +125,3 @@ class LogParse:
                 'filename': self.name, 'filter': 'Fuzzy Match', 'level': self.level, 
                 'count': 1, 'index': self.counter['fuzzy_match'], 'log': line
             })
-            
-
-        

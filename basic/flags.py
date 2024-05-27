@@ -1,3 +1,4 @@
+""" set script args """
 from textwrap import dedent
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
@@ -71,7 +72,7 @@ class Arg:
             parse.add_argument(*flags, **arg)
 
         return vars(parse.parse_args())
-        
+
 if __name__ == "__main__":
     dic = Arg()
     print(dic)

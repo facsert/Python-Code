@@ -15,10 +15,10 @@ from loguru import  logger
 
 class Process:
     """ 使用 gevent 无阻塞执行命令 """
-    
+
     def __init__(self):
         self.proc = None
-    
+
     @staticmethod
     def exec(command, timeout=None, view=True):
         """ 
@@ -36,12 +36,12 @@ class Process:
         """
         proc = gevent.subprocess.Popen(
             command,
-            shell=True, 
-            stdout=gevent.subprocess.PIPE, 
+            shell=True,
+            stdout=gevent.subprocess.PIPE,
             stderr=gevent.subprocess.STDOUT,
             text=True,
         )
-        
+
         logger.info(command)
         succ, line, output = False, "", ""
         try:
@@ -49,7 +49,7 @@ class Process:
                 while True:
                     line = proc.stdout.readline()
                     if line != "":
-                        logger.info(line.rstrip()) if view else False
+                        _ = logger.info(line.rstrip()) if view else False
                         output = f"{output}{line}"
                     
                     if line == "" and proc.poll() is not None:
@@ -58,9 +58,9 @@ class Process:
         except TimeoutError:
             logger.error("TimeoutError")
             output = f"{output}\nTimeourError: {command}"
-        
+
         return succ, output
-    
+
     def create(self, command, expect, resp_timeout=5, timeout=30, view=True):
         """ 
         Description: 创建交互式命令 执行
@@ -78,14 +78,14 @@ class Process:
             command,
             shell=True,
             stdin=gevent.subprocess.PIPE,
-            stdout=gevent.subprocess.PIPE, 
+            stdout=gevent.subprocess.PIPE,
             stderr=gevent.subprocess.STDOUT,
             text=True,
         )
         logger.info(command)
         succ, output = self.read(expect, resp_timeout, timeout, view)
-        return succ, output 
-    
+        return succ, output
+
     def close(self):
         """ 关闭进程 """
         self.proc.kill()
@@ -130,22 +130,22 @@ class Process:
                     line = self.proc.stdout.readline()
             except TimeoutError:
                 logger.error("block TimeoutError")
-                output = f"{output}\nBlock TimeourError"
+                output = f"{output}\nBlock TimeoutError"
                 break
-            
+
             if line == "" and self.proc.poll() is not None:
                 break
-            
+
             if line != "":
-                logger.info(line.rstrip()) if view else False
+                _ = logger.info(line.rstrip()) if view else False
                 output = f"{output}{line}"
                 if expect and expect in output:
                     succ = True
                     break
-                                
+
             if time() >= end:
                 logger.error("\nRun command timeout")
-                output = f"{output}\nTimeourError"
+                output = f"{output}\nTimeoutError"
                 break
         return succ, output
 

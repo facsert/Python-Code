@@ -8,7 +8,7 @@ Description:
 
 from json import dumps
 
-class FlatDict(dict): 
+class FlatDict(dict):
     """扁平化字典"""   
 
     def __init__(self, *args, **kwargs):
@@ -16,7 +16,7 @@ class FlatDict(dict):
         Description: 初始化属性, flat(扁平化字典) separator(分隔符)
         Return: None
         Attention: 对象存一个原生字典和扁平化字典
-        '''        
+        '''
         super().__init__(*args, **kwargs)
         super().update(*args, **kwargs)
         self.flat = {}
@@ -37,12 +37,12 @@ class FlatDict(dict):
             if isinstance(curr, list):
                 curr = curr[int(k)]
                 continue
-                        
+
             ret = curr.setdefault(k, {})
             if isinstance(ret, list) or isinstance(ret, dict):
                 curr = curr[k]
                 continue
-            
+
             curr.update({k: {}})
 
         if isinstance(curr, list):
@@ -59,11 +59,11 @@ class FlatDict(dict):
         Param parent_key dict: 父字典的 key 
         Return: None
         Attention: 任一层的字典 key value 都要保存
-        '''        
+        '''
         if isinstance(data, dict) or isinstance(data, list) or isinstance(data, tuple):
             try:
                 group = data.items()
-            except AttributeError as e:
+            except AttributeError as _:
                 group = enumerate(data)
 
             for key, value in group:
@@ -78,7 +78,7 @@ class FlatDict(dict):
         Param value Any: 父字典的 key 
         Return: None
         Attention: 
-        '''        
+        '''
         if self.separator in key:
             self.update_dict(key, value)
         else:
@@ -90,7 +90,7 @@ class FlatDict(dict):
         Param key str: 字典 key, 允许使用多层 key 
         Return Any: 字典 key 对应的 value 
         Attention: 
-        '''        
+        '''
         try:
             return super().__getitem__(key)
         except KeyError:
@@ -102,7 +102,7 @@ class FlatDict(dict):
         Param key str: 字典 key, 不允许使用多层 key 
         Return: None
         Attention: 只允许使用原生字典的 key
-        '''    
+        '''
         super().__delitem__(key)
         self.flat = {}
         self.flat_dict(self)
@@ -112,7 +112,7 @@ class FlatDict(dict):
         Description: 获取原生字典长度
         Return int: 字典长度 
         Attention: 
-        '''        
+        '''
         return super().__len__()
 
     def update(self, *args, **kwargs):
@@ -120,7 +120,7 @@ class FlatDict(dict):
         Description: 更新字典
         Return: None 
         Attention: 用法与原生字典一致
-        '''        
+        '''
         super().update(*args, **kwargs)
         self.flat = {}
         self.flat_dict(self)
@@ -152,5 +152,3 @@ if __name__ == '__main__':
     flat['a.1.a'] = 0
     print(flat['a'])
     # print(flat.get('a.c'))
-    
-

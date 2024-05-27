@@ -1,98 +1,66 @@
-import socket
-from json import load
-from os.path import join, isabs, dirname
+""" common method """
+from time import sleep
 from platform import system
+from os import walk
+from os.path import join, dirname, exists
 
 from loguru import logger
 
-def abs_dir(*path, os=""):
-    """ 获取文件或目录的绝对路径
-    Param path str  : 相对路径或绝对路径
-    Param os   str  : 根据 os 变更路径格式
-    Return succ bool: 绝对路径文件或路径是否存在
-           abs str  : 绝对路径
-    Attention: 参数 path 相对路径必须相对于 pytest 根目录(run.py 同级目录)
+
+def title(msg: str="title", level:int=3, length: int=50) -> str:
+    """ 标题打印 """
+    index = int(level) % 3
+    logger.info(("\n\n", "\n", "", "")[index])
+    border = ("#", "=", "*", "-")[index] * length
+    logger.info(f"{border} {msg} {border}")
+    return msg
+
+
+def display(msg: str="checkpoint", success: bool=True) -> str:
+    """ 结果打印 """
+    if bool(success):
+        logger.info(f"{msg:<80} [PASS]")
+    else:
+        logger.error(f"{msg:><80} [FAIL]")
+    return msg
+
+
+def abs_dir(*path: str, platform: str|None =None) -> str:
+    """ 以项目根路径作为相对路径基准拼接
+    Param path str      : 相对路径或绝对路径
+    Param platform str  : 根据平台变更拼接方式(linux, windows)
+    Attention: 参数 path 相对路径必须相对于项目根目录
     """
     platform = system() if platform is None else platform
     abs_path = join(dirname(dirname(__file__)), join("", *path))
     sep = {'linux': '/', 'windows': '\\'}.get(platform.lower(), '/')
     return abs_path.replace("/", sep).replace("\\", sep)
 
+def wait(delay: int=1, length: int=50) -> int:
+    """ 等待进度条 """
+    use = 0
+    while use < delay:
+        block = int(round(length * use / delay))
+        text = f"[{'#' * block + '-' * (length - block)}]"
+        print(f"Please wait {delay}s {text} {delay - use:>4}s", end="\r")
+        sleep(1)
+        use += 1
+    print(f"Please wait {delay}s [{'#' * (length)}] {delay - use:>4}s")
+    return delay
 
-def json_load(path):
-    """ 解析 json 文件返回字典
-    Param  path   str : 相对路径或绝对路径
-    Return succ   bool: 解析成功或失败
-           config dict: 字典
-    Attention: 解析失败, 返回一个包含 error 原因的字典
-    """
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return load(f)
-    except Exception as e:
-        return {"error": f"Read {path} error: {e}"}
+def listdir(path=".", ignore=None):
+    """ 递归遍历路径下的所有文件 """
+    if not exists(path):
+        display(f"{path} not exist", False)
+        return []
 
-
-def title(msg='title', level=3, length=50):
-    """根据 level 等级打印不同样式的标题
-
-    Args:
-        msg (str): 标题内容. Defaults to 'title'.
-        level  (int): 标题等级 (0, 1, 2, 3). Defaults to 3.
-        length (int): 标题两端符号的数量. Defaults to 30.
-
-    Returns:
-        None: 无返回值
-
-    Attention:
-        标题有4个等级, 与符号对应关系是
-            0: '#'
-            1: '='
-            2: '*'
-            3: '-'
-    """
-    try:
-        logger.info(("\n\n", "\n", "", "")[level])
-        border = ('#', '=', '*', '-')[level] * length
-        logger.info(f'{border} {msg} {border}')
-    except IndexError as _:
-        logger.error(f'IndexError: level 0~3, but use {level}')
-
-    return msg
+    ignore = ignore if ignore else lambda f: False
+    for root, _, files in walk(path):
+        for file in files:
+            if not ignore(file):
+                yield join(root, file)
 
 
-def display(msg="checkpoint", succ=True):
-    """ 打印阶段性结果
-    Param msg str: 显示内容
-    succ  bool| None: 检查结果
-    Example:
-        True:  checkpoint                     [PASS] (显示 pass 结果)
-        False: checkpoint>>>>>>>>>>>>>>>>>>>>>[FAIL] (显示 fail 结果)
-        None:  checkpoint>>>>>>>>>>>>>>>>>>>>>[FAIL] (显示 fail 结果并退出)
-    """
-    if succ is True:
-        logger.info(f'\33[32m{msg:<100} [SUCC] \33[37m')
-    else:
-        logger.error(f'\33[31m{msg:><100} [FAIL] \33[37m')
-    return msg
-
-
-def socket_port(host, port):
-    """ 检查端口是否可用
-    Param host str: 主机地址
-    Param port int: 端口
-    Return succ bool: 端口是否可用
-    """
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(1)
-            s.connect((host, int(port)))
-            return True
-    except Exception as e:
-        logger.error(f'Check port {port} error: {e}')
-        return False
-    finally:
-        s.close()
-
-if __name__ == "__main__":
-    pass
+if __name__ == '__main__':
+    wait(10)
+    print(abs_dir("root/Desktop", "Python", platform="linux"))

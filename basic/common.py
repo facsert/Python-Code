@@ -1,10 +1,11 @@
+""" common method """
 from time import sleep
-from os import walk
 from platform import system
-from os.path import join, dirname
-
+from os import walk
+from os.path import join, dirname, exists
 
 from loguru import logger
+
 
 def title(msg: str="title", level:int=3, length: int=50) -> str:
     """ 标题打印 """
@@ -15,9 +16,9 @@ def title(msg: str="title", level:int=3, length: int=50) -> str:
     return msg
 
 
-def display(msg: str="checkpoint", succ: bool=True) -> str:
+def display(msg: str="checkpoint", success: bool=True) -> str:
     """ 结果打印 """
-    if bool(succ):
+    if bool(success):
         logger.info(f"{msg:<80} [PASS]")
     else:
         logger.error(f"{msg:><80} [FAIL]")
@@ -48,12 +49,19 @@ def wait(delay: int=1, length: int=50) -> int:
     return delay
 
 
-def listdir(path: str) -> iter:
-    """ 获取目录下所有文件 """
+def listdir(path=".", ignore=None):
+    """ 递归遍历路径下的所有文件 """
+    if not exists(path):
+        display(f"{path} not exist", False)
+        return []
+
+    ignore = ignore if ignore else lambda f: False
     for root, _, files in walk(path):
         for file in files:
-            yield join(root, file)
-    
+            if not ignore(file):
+                yield join(root, file)
+
+
 if __name__ == '__main__':
     wait(10)
-    print(abs_dir("root/Desktop", "Pyhon", platform="linux"))
+    print(abs_dir("root/Desktop", "Python", platform="linux"))
