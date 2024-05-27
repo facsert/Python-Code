@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package user;
+
+service UserService {
+    rpc GetUserList (Null) returns (UserList);
+    rpc GetUser (Null) returns (UserList);
+    rpc AddUser (User) returns (UserList);
+}
+
+message Null {}
+
+message UserName {
+    string name = 1;
+}
+
+message User {
+    string name = 1;
+    int32 age = 2;
+    string hobby = 3;
+}
+
+message UserList {
+    repeated User userlist = 1;
+}
+
+// 再根路径创建 pb 文件夹, proto 文件放入 pb 路径下
+// 在服务端或客户端根目录执行吗命令在 pb 下生成代码
+// python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. pb/user.proto
