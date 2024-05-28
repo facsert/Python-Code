@@ -25,12 +25,12 @@ class UserService(UserHandleServicer):
         return User(name="nobody", age=0, hobby="no")
     
     def GetUserList(self, request, context):
-        response = UserList()
-        response.userlist.extend(users)
+        response = UserList(userlist=[
+            User(name=p['name'], age=p['age'], hobby=p['hobby'])
+            for p in users
+        ])
         return response
         
-
-
 def main():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_UserHandleServicer_to_server(UserService(), server)
