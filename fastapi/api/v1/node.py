@@ -10,7 +10,10 @@ from utils.db import Database
 
 
 router = APIRouter()
-created: Cursor = Database.create_session
+
+def created():
+    with Database.create_session() as session:
+        yield session
 
 
 @router.get('/nodes')

@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 
 import psycopg
 from psycopg.rows import dict_row
@@ -29,13 +30,15 @@ class Database:
             password="password"
         )
     
+    @contextmanager
     @classmethod
     def create_session(cls):
         session = cls.connect.cursor(row_factory=dict_row)
-        yield cls.session
-        
-        session.close()
-        cls.connect.commit()
+        try:
+            yield cls.session
+        finally:
+            session.close()
+            cls.connect.commit()
         
     @classmethod
     def get_session(cls):

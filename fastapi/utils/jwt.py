@@ -30,8 +30,9 @@ class Jwt:
     
     @classmethod
     def authentication(cls, username: str, password: str):
-        pass
-    
+        user = Database.get_session().execute("SELECT password FROM users WHERE username = %s", (username)).fetchone()
+        return user.get("password") == password
+            
     @classmethod
     def create_token(cls, data: dict, expires_hours:int=0) -> str:
         """
