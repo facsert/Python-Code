@@ -7,7 +7,7 @@ from paramiko import SSHClient, AutoAddPolicy
 
 
 class Client:
-    """ paramiko 远程操作 linxu """
+    """ paramiko 远程操作 linux """
 
     def __init__(self, host, port, username, password, timeout=60):
         self.host = host

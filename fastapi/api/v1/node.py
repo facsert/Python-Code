@@ -5,8 +5,8 @@ from loguru import logger
 from psycopg import Cursor
 
 from utils import schemas
-from utils.db import Nodes
-from utils.db import Database
+from utils.database import Nodes
+from utils.database import Database
 
 
 router = APIRouter()
