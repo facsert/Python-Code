@@ -63,5 +63,4 @@ def listdir(path=".", ignore=None):
 
 
 if __name__ == '__main__':
-    wait(10)
-    print(abs_dir("root/Desktop", "Python", platform="linux"))
+    pass
