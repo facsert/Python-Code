@@ -7,10 +7,10 @@ import uvicorn
 from loguru import logger
 from fastapi import FastAPI
 
-from utils.logger import LOGGER
+from lib.logger import LOGGER
+from lib.database import Database
+from lib.middleware import add_middlewares
 from utils.router import add_routers
-from utils.database import Database
-from utils.middleware import add_middlewares
 
 
 HOST = "localhost"
@@ -37,7 +37,7 @@ add_middlewares(app)
 
 
 if __name__ == "__main__":
-        uvicorn.run(
+    uvicorn.run(
         app="main:app", 
         host=HOST, 
         port=PORT, 
