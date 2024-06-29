@@ -1,4 +1,5 @@
 fastapi[all]
 loguru
 toml
-pymongo
+psycopg
+psycopg_pool
