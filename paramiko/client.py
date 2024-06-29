@@ -7,7 +7,7 @@ from paramiko import SSHClient, AutoAddPolicy
 
 
 class Client:
-    """ paramiko 远程操作 linxu """
+    """ paramiko 远程操作 linux """
 
     def __init__(self, host, port, username, password, timeout=60):
         self.host = host
@@ -95,7 +95,7 @@ class Client:
             若等待响应开始计时(resp > 0), 执行时间超过 timeout + resp_timeout 才算超时
             若命令一直有输出(响应计时 resp == 0), 执行 timeout 时间后退出
         """
-        self.channel.settimeout(timeout) 
+        self.channel.settimeout(timeout)
         self.channel.sendall(command + '\n')
         resp_timeout = min(timeout, resp_timeout)
 
@@ -117,14 +117,14 @@ class Client:
                 resp += 0.1
                 if resp > resp_timeout:
                     break
-            
+
             end_time = (last_time + resp_timeout, last_time)[resp == 0]
             if time() > end_time:
                 _ = logger.error(f"TimeoutError: {command}") if view else False
                 output += f"\nTimeoutError: {command}"
                 break
         return expect in output, output
-    
+
     def set_env_var(self, variable, value, view=False):
         """ 设置环境变量
         Params:
