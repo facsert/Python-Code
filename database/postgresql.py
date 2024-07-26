@@ -1,48 +1,46 @@
 from contextlib import contextmanager
 
 import psycopg
+from psycopg_pool import ConnectionPool
 from psycopg.rows import dict_row
-from psycopg import Cursor, Connection
+from loguru import logger
 
+
+config = {
+    "host": "localhost",
+    "port": "5432",
+    "dbname": "learn",
+    "user": "postgres",
+    "password": "password",
+}
 
 class Database:
     
-    connect: None | Connection = None
-   
     @classmethod
-    def connect_database(cls) -> None:
-        if cls.connect is None or cls.connect.closed:
-            cls.connect = psycopg.connect(
-                host="localhost",
-                port="5432",
-                dbname="db",
-                user="postgres",
-                password="password"
-            )
-    
+    def init(cls, db=None):
+        db = db if db else config
+        conn_str = " ".join([f"{k}={v}" for k, v in db.items()])
+        cls.pool: ConnectionPool = ConnectionPool(min_size=1, max_size=10, conninfo=conn_str)
+        return cls.pool
+            
     @contextmanager
-    @classmethod
-    def create_session(cls):
-        session = cls.connect.cursor(row_factory=dict_row)
+    def __new__(cls, db=None):
+        cls.init(db) if db is not None else None
         try:
-            yield cls.session
+            conn = cls.pool.getconn()
+            cursor = conn.cursor(row_factory=dict_row)
+            yield cursor
+            conn.commit()
+        except Exception as e:
+            conn.rollback() if conn else None
+            logger.error(f"error: {e}")
         finally:
-            session.close()
-            cls.connect.commit()
+            cursor.close() if cursor else None
+            cls.pool.putconn(conn)
+            
+if __name__ == "__main__":
+    Database.init()
+    with Database() as cursor:
+        cursor.execute("SELECT id, title FROM article")
+        print(cursor.fetchall())
         
-    @classmethod
-    def get_session(cls):
-        return cls.connect.cursor(row_factory=dict_row)
-        
-    @classmethod
-    def create_tables(cls):
-        pass
-    
-    @classmethod
-    def close(cls):
-        cls.connect.close()
-        
-    @classmethod
-    def init(cls):
-        cls.connect_database()
-        cls.create_tables()
