@@ -50,9 +50,10 @@ function check_process() {
 }
 
 usage=$(cat <<EOF
-  -h/--help      show help   \n
-  --reload       reload service    \n
-  --kill         close service    \n
+  -h/--help      show help           \n
+  --restart      restart service     \n
+  --kill         close service       \n
+  --check        check service alive \n
 EOF
 )
 
@@ -63,7 +64,7 @@ while [[ $# -gt 0 ]]; do
         echo -e $usage
         exit 0
         ;;
-      --reload)
+      --restart)
         cd $SCRIPT_DIR
         kill_process
         start_process
@@ -85,9 +86,9 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
       *)
-       echo "param $1"
-       params+=($1)
-       shift
-       ;;
+        echo "param $1"
+        params+=($1)
+        shift
+        ;;
     esac
 done
