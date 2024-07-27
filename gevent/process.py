@@ -20,17 +20,17 @@ class Process:
         self.proc = None
 
     @staticmethod
-    def exec(command, timeout=None, view=True):
+    def exec(command: str, timeout: int=30, view: bool=True) -> tuple[bool, str]:
         """ 
         Description: 非交互式命令执行
-          Param  command str : 执行的 shell 指令
-          Param  timeout int : 执行的 shell 指令超时时间
-          Param  view    bool: 是否显示执行过程
-          
+            Param  command str : 执行的 shell 指令
+            Param  timeout int : 执行的 shell 指令超时时间
+            Param  view    bool: 是否显示执行过程
+
         Return 
-          code    int : 命令执行执行成功与否 
-          output  str : 命令返回结果
-          
+            succ    bool : 命令执行执行成功与否 
+            output  str : 命令返回结果
+
         Attention: 
             若 timeout 设置 None 表示一直等到命令执行结束
         """
@@ -43,36 +43,42 @@ class Process:
         )
 
         logger.info(command)
-        succ, line, output = False, "", ""
+        succ, line, output = False, "", []
         try:
             with Timeout(timeout, TimeoutError):
                 while True:
                     line = proc.stdout.readline()
                     if line != "":
                         _ = logger.info(line.rstrip()) if view else False
-                        output = f"{output}{line}"
-                    
+                        output.append(line)
+
                     if line == "" and proc.poll() is not None:
                         succ = int(proc.poll()) == 0
                         break
         except TimeoutError:
             logger.error("TimeoutError")
-            output = f"{output}\nTimeourError: {command}"
+            output.append(f"\nTimeourError: {command}")
 
-        return succ, output
+        return succ, "".join(output)
 
-    def create(self, command, expect, resp_timeout=5, timeout=30, view=True):
+    def create(self,
+        command: str,
+        expect: None|list=None,
+        resp_timeout: int=5,
+        timeout: int=30,
+        view: bool=True
+    ) -> tuple[bool, str]:
         """ 
         Description: 创建交互式命令 执行
-          Param  command str : 执行指令字符串
-          Param  expect str  : 命令输出期望, 输出行出现预期则退出
-          Param  resp_timeout int : 执行命令无输出的超时时间
-          Param  timeout int : 执行的 命令的超时时间
-          Param  view    bool: 是否显示执行过程
-          
+            Param  command str : 执行指令字符串
+            Param  expect str  : 命令输出期望, 输出行出现预期则退出
+            Param  resp_timeout int : 执行命令无输出的超时时间
+            Param  timeout int : 执行的 命令的超时时间
+            Param  view    bool: 是否显示执行过程
+
         Return 
-          succ    str : 输出是否包含 expect
-          output  str : 命令返回结果
+            succ    str : 输出是否包含 expect
+            output  str : 命令返回结果
         """
         self.proc = gevent.subprocess.Popen(
             command,
@@ -88,20 +94,26 @@ class Process:
 
     def close(self):
         """ 关闭进程 """
-        self.proc.kill()
+        _ = self.proc.kill() if self.proc else None
 
-    def send(self, command, expect, resp_timeout=5, timeout=30, view=True):
+    def send(self,
+        command: str,
+        expect: None|list=None,
+        resp_timeout: int=5,
+        timeout: int=30,
+        view: bool=True
+    ):
         """ 
         Description: 交互式进程写入命令
-          Param  command str : 写入管道的命令
-          Param  expect str  : 命令输出期望, 输出行出现预期则退出
-          Param  resp_timeout int : 执行命令无输出的超时时间
-          Param  timeout int : 执行命令的超时时间
-          Param  view    bool: 是否显示执行过程
-          
+            Param  command str : 写入管道的命令
+            Param  expect str  : 命令输出期望, 输出行出现预期则退出
+            Param  resp_timeout int : 执行命令无输出的超时时间
+            Param  timeout int : 执行命令的超时时间
+            Param  view    bool: 是否显示执行过程
+
         Return 
-          succ    str : 输出是否包含 expect
-          output  str : 命令返回结果  
+            succ    str : 输出是否包含 expect
+            output  str : 命令返回结果  
         """
         logger.info(command)
         self.proc.stdin.write(f"{command}\n")
@@ -109,28 +121,33 @@ class Process:
         succ, output = self.read(expect, resp_timeout, timeout, view)
         return succ, output
 
-    def read(self, expect, resp_timeout=5, timeout=30, view=True):
+    def read(self,
+        expect: None|list=None,
+        resp_timeout: int=5,
+        timeout: int=30,
+        view: bool=True
+    ):
         """ 
         Description: 读取交互式进程的输出
-          Param  expect str  : 命令输出期望, 输出行出现预期则退出
-          Param  resp_timeout int : 执行命令无输出的超时时间
-          Param  timeout int : 执行命令的超时时间
-          Param  view    bool: 是否显示执行过程
-          
+            Param  expect str  : 命令输出期望, 输出行出现预期则退出
+            Param  resp_timeout int : 执行命令无输出的超时时间
+            Param  timeout int : 执行命令的超时时间
+            Param  view    bool: 是否显示执行过程
+
         Return 
-          succ    str : 输出是否包含 expect
-          output  str : 命令返回结果  
+            succ    str : 输出是否包含 expect
+            output  str : 命令返回结果  
         """
         end = time() + timeout
-        succ, line, output = False, "", ""
+        succ, line, output = False, "", []
         while True:
             try:
                 with Timeout(resp_timeout, TimeoutError):
                     self.proc.stdout.flush()
                     line = self.proc.stdout.readline()
             except TimeoutError:
-                logger.error("block TimeoutError")
-                output = f"{output}\nBlock TimeoutError"
+                logger.error("No Response TimeoutError")
+                output.append("\nNo Response TimeoutError")
                 break
 
             if line == "" and self.proc.poll() is not None:
@@ -138,16 +155,17 @@ class Process:
 
             if line != "":
                 _ = logger.info(line.rstrip()) if view else False
-                output = f"{output}{line}"
-                if expect and expect in output:
+                output.append(line)
+
+                if expect and any(k in line for k in expect):
                     succ = True
                     break
 
             if time() >= end:
                 logger.error("\nRun command timeout")
-                output = f"{output}\nTimeoutError"
+                output.append("\nRun Command TimeoutError")
                 break
-        return succ, output
+        return succ, "".join(output)
 
 if __name__ == '__main__':
     Process.exec("ping -c 3 127.0.0.1")
