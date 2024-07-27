@@ -3,9 +3,6 @@ from contextlib import contextmanager
 
 import MySQLdb
 from loguru import logger
-from toml import load
-
-from lib.common import abs_dir
 
 CONFIG = {
     "host": "localhost",

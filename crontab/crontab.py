@@ -45,6 +45,7 @@ class Schedule:
     @classmethod
     def get_jobs(cls):
         """ 获取所有定时任务 """
+        cls.refresh()
         return cls.tasks
 
     @classmethod
