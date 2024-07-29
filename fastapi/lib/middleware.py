@@ -15,13 +15,12 @@ def add_middlewares(app: FastAPI):
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     @app.middleware("http")
     async def catch_exceptions(request: Request, call_next):
         """ 捕获所有接口执行异常 """
         try:
-            response = await call_next(request)
-            return response
+            return await call_next(request)
         except Exception as e:
             logger.error(f"Error {type(e).__name__}: {e}")
             logger.error(format_exc())

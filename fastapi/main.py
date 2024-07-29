@@ -24,7 +24,6 @@ async def lifespan(router: FastAPI):
     logger.info("app start")
     yield
     logger.info("app close")
-    Database.close()
 
 app = FastAPI(
     title="FastAPI",
@@ -35,13 +34,12 @@ app = FastAPI(
 
 add_middlewares(app)
 
-
 if __name__ == "__main__":
     uvicorn.run(
-        app="main:app", 
-        host=HOST, 
-        port=PORT, 
-        reload=False, 
+        app="main:app",
+        host=HOST,
+        port=PORT,
+        reload=False,
         log_config=LOGGER,
         use_colors=False
     )

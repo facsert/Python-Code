@@ -48,7 +48,7 @@ def wait(delay: int=1, length: int=50) -> int:
     print(f"Please wait {delay}s [{'#' * (length)}] {delay - use:>4}s")
     return delay
 
-def listdir(path=".", ignore=None):
+def listpath(path=".", ignore=None):
     """ 递归遍历路径下的所有文件 """
     if not exists(path):
         display(f"{path} not exist", False)
