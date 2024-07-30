@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 
-import psycopg
 from psycopg_pool import ConnectionPool
 from psycopg.rows import dict_row
 from loguru import logger
@@ -19,7 +18,7 @@ class DBConnect:
 DEFAULT_DATABASE: DBConnect = DBConnect(
     host="localhost",
     port="5432",
-    dbname="learn",
+    dbname="postgres",
     user="postgres",
     password="password"
 )

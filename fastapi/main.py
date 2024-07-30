@@ -7,9 +7,9 @@ import uvicorn
 from loguru import logger
 from fastapi import FastAPI
 
-from lib.logger import LOGGER
-from lib.database import Database
-from lib.middleware import add_middlewares
+from utils.logger import LOGGER
+from utils.database import Database
+from utils.middleware import add_middlewares
 from utils.router import add_routers
 
 

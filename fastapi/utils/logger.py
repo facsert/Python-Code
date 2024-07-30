@@ -6,7 +6,7 @@ import sys
 from loguru import logger
 from uvicorn.config import LOGGING_CONFIG
 
-from lib.common import abs_dir
+from utils.common import abs_dir
 
 
 LOG_PATH = abs_dir('log', 'report.log')
