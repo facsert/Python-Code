@@ -2,13 +2,14 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.docs import get_swagger_ui_html
 
-from api.v1 import node
+from api.v1 import node, schedule
 from utils.common import abs_dir
 
 
 def add_routers(app: FastAPI):
     """ app add router"""
     app.include_router(node.router, prefix="/api/v1", tags=["node"])
+    app.include_router(schedule.router, prefix="/api/v1", tags=["schedule"])
 
     # 指定本地 swagger-ui/dist 路径, 挂载到 /static 路由
     # app.mount('/static', StaticFiles(directory=abs_dir("static", "swagger-ui", "dist")), name="static")

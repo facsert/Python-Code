@@ -1,7 +1,12 @@
-CREATE TABLE IF NOT EXISTS person (
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    age INT NOT NULL CHECK (age >= 0),
-    full_name VARCHAR(255) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED,    
-    CONSTRAINT PRIMARY KEY (first_name, last_name),
+CREATE TABLE "node" (
+    "id" SERIAL PRIMARY KEY,
+    "name" VARCHAR(50) NOT NULL,
+    "host" VARCHAR(50) NOT NULL,
+    "port" INT NOT NULL,
+    "username" VARCHAR(50) NOT NULL,
+    "password" VARCHAR(50) NOT NULL,
+    "create_at" TIMESTAMP NOT NULL DEFAULT now(),
+    "update_at" TIMESTAMP NOT NULL DEFAULT now(),
+    "description" VARCHAR(255),
+    CONSTRAINT "node_unique" UNIQUE("name", "host", "port")
 );

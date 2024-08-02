@@ -23,10 +23,9 @@ LOGGER["formatters"]["access"]['datefmt'] = "%Y-%m-%d %H:%M:%S"
 LOGGER["handlers"]["access_file"] = {"formatter": "access", "class": "logging.FileHandler", "filename": LOG_PATH}
 LOGGER["loggers"]["uvicorn.access"]["handlers"].append("access_file")
 
-
 logger.remove()
 fmt = '[<green>{time:YYYY-MM-DD HH:mm:ss}</green>][<level>{level: <8}</level>]: <level>{message}</level>'
 logger.add(sys.stderr,  level='INFO', format=fmt)
 logger.add(abs_dir('log', 'report.log'),
-    level='INFO', format=fmt, rotation='50 MB', retention='30 days'
+    level='INFO', format=fmt, rotation='10 days', retention='30 days'
 )
