@@ -157,7 +157,7 @@ class Process:
                 _ = logger.info(line.rstrip()) if view else False
                 output.append(line)
 
-                if expect and any(k in line for k in expect):
+                if isinstance(expect, list) and any(k in line for k in expect):
                     succ = True
                     break
 

@@ -33,7 +33,7 @@ TEMPLATE = {
 
 # 自定义帮助信息
 HELP = dedent('''
-              
+
 Get script help info
     python script.py --help
 

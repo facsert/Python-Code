@@ -10,7 +10,7 @@ def main():
         user_list = stub.GetUserList(Null())
         for i in user_list.userlist:
             print(i.name, i.age, i.hobby)
-        
+
         user = stub.GetUser(UserName(name="John"))
         print(user)
 

@@ -4,27 +4,30 @@ from json import dumps, load
 
 from loguru import logger
 from paramiko import SSHClient, AutoAddPolicy
+from paramiko.channel import Channel
+from paramiko.sftp_client import SFTPClient
 
 
 class Client:
-    """ paramiko 远程操作 linux """
+    """ paramiko 远程操作 linxu """
 
-    def __init__(self, host, port, username, password, timeout=60):
-        self.host = host
-        self.port = port
-        self.username = username
-        self.password = password
-        self.timeout = timeout
-        self.client = self.connect()
-        self.channel = self.client.invoke_shell()
-        self.sftp = self.client.open_sftp()
+    def __init__(self, host: str, port: int, username: str, password: str, timeout: int=60):
+        self.host: str = host
+        self.port: int = int(port)
+        self.username: str = username
+        self.password: str = password
+        self.timeout: int = int(timeout)
+
+        self.client: SSHClient = self.connect()
+        self.channel: Channel = self.client.invoke_shell()
+        self.sftp: SFTPClient = self.client.open_sftp()
 
     def __repr__(self) -> str:
         return dumps(vars(self), indent=4)
 
     def connect(self):
         """ 连接 linux """
-        client = SSHClient()
+        client: SSHClient = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy())
         client.connect(
             self.host,
@@ -37,10 +40,10 @@ class Client:
 
     def close(self):
         """ 关闭 ssh 连接和通道 """
-        self.channel.close()
-        self.client.close()
+        _ = self.channel.close() if self.channel else None
+        _ = self.client.close() if self.client else None
 
-    def exec(self, command, timeout=5, view=True):
+    def exec(self, command: str, timeout: int=5, view: bool=True) -> tuple[bool, str]:
         """执行非交互式 linux 命令, 并实时打印
 
         Args:
@@ -78,7 +81,14 @@ class Client:
             output.append(err_msg)
         return succ, "".join(output)
 
-    def run(self, command, expect="", timeout=60, resp_timeout=3,view=True):
+    def run(
+        self,
+        command: str,
+        expect: None|list=None,
+        resp_timeout: int=3,
+        timeout: int=60,
+        view: bool=True
+    ) -> tuple[bool, str]:
         """交互式命令执行
         Args:
             command str: linux 命令
@@ -99,46 +109,46 @@ class Client:
         self.channel.sendall(command + '\n')
         resp_timeout = min(timeout, resp_timeout)
 
-        buff, output, resp, last_time = "", '', 0, time() + timeout
+        expect_check, check_result = isinstance(expect, list), False
+        buff, output, resp, end_time = "", [], 0, time() + timeout
         while True:
             if self.channel.recv_ready():
-                data = f"{self.channel.recv(65535).decode('utf-8', 'ignore')}"
-                output = f"{output}{data}"
+                data = f"{self.channel.recv(10).decode('utf-8', 'ignore')}"
+                output.append(data)
                 data = f"{buff}{data}"
-                buff = ""
-                lines = data.splitlines(True)
-                buff, lines, resp = ("", lines, 0) if data.endswith('\n') else (lines[-1], lines[:-1], 0)
+                lines, resp = data.splitlines(True), 0
+                buff, lines = ("", lines) if data.endswith('\n') else (lines[-1], lines[:-1])
 
                 for line in lines:
                     _ = logger.info(line.rstrip()) if view else False
-                    resp = resp_timeout if expect != "" and expect in line else resp
+                    if expect_check and any(k in line for k in expect):
+                        resp, check_result = resp_timeout, True
             else:
                 sleep(0.1)
                 resp += 0.1
                 if resp > resp_timeout:
                     break
 
-            end_time = (last_time + resp_timeout, last_time)[resp == 0]
             if time() > end_time:
                 _ = logger.error(f"TimeoutError: {command}") if view else False
-                output += f"\nTimeoutError: {command}"
+                output.append(f"\nTimeoutError: {command}")
                 break
-        return expect in output, output
+        return check_result, output
 
-    def set_env_var(self, variable, value, view=False):
+    def set_env_var(self, variable: str, value: str, view: bool=False) -> bool:
         """ 设置环境变量
         Params:
-          variable str : linux 命令
-          value    str : 命令返回预期值
+            variable str : linux 命令
+            value    str : 命令返回预期值
 
         Return:
-          succ bool: 环境变量设置成功
+            succ bool: 环境变量设置成功
 
         Attention:
             前后打印环境变量值不同则判定环境变量设置成功
         """
         cmd = f'export {variable}={value}; echo "${variable}, code: $?"'
-        succ, _ = self.run(cmd, "code: 0", resp_timeout=1, view=view)
+        succ, output = self.run(cmd, "code: 0", resp_timeout=2, view=view)
 
         if succ:
             logger.info(f"set environment {variable}:{value}")
@@ -146,38 +156,38 @@ class Client:
             logger.error(f"set environment {variable} to {value} fail")
         return succ
 
-    def chdir(self, path):
+    def chdir(self, path: str) -> bool:
         """ 变更通道当前目录
         Params:
-          dir str : client 端绝对路径
+            dir str : client 端绝对路径
 
         Return:
-          succ bool: 切换成功
+            succ bool: 切换成功
         """
-        cmd = f'cd {path}; echo $PWD, code: $?'
-        succ, output = self.run(cmd, "code: 0", resp_timeout=1, view=False)
+        cmd: str = f'cd {path}; echo $PWD, code: $?'
+        succ, output = self.run(cmd, "code: 0", resp_timeout=2, view=False)
         if succ:
             logger.info(f"change dir to {path}")
         else:
             logger.error(f"change dir to {path} fail: {output}")
         return succ
 
-    def kill_proc(self, key, view=False, retry=30):
+    def kill_proc(self, key: str, view: bool=False, retry: int=30) -> bool:
         """ 杀死进程
         Params:
-          key   str: 进程关键字
-          retry int: 重试次数
+            key   str: 进程关键字
+            retry int: 重试次数
 
         Return:
-          succ bool: 进程成功关闭
+            succ bool: 进程成功关闭
 
         Attention:
             通过关键字查询不到对应进程判定进程关闭
         """
 
-        check = f"ps -eaf | grep -E {key} | grep -v grep"
-        kill = check + "|awk '{print $2}' | xargs kill -15"
-        father_kill = check + "|awk '{print $3}' | xargs kill -15"
+        check: str = f"ps -eaf | grep -E {key} | grep -v grep"
+        kill: str = check + "|awk '{print $2}' | xargs kill -15"
+        father_kill: str = check + "|awk '{print $3}' | xargs kill -15"
         while retry:
             proc_alive, _ = self.exec(check, timeout=10, view=view)
             self.exec((kill, father_kill)[retry < 5], timeout=10, view=view)
@@ -188,25 +198,25 @@ class Client:
             break
         return retry > 0
 
-    def update_json(self, file, items):
+    def update_json(self, file: str, items: dict) -> bool:
         """ 更新远端 json 文件
         Params:
-          file  str : client 端 json 文件绝对地址
-          items dict: 更新键值对
+            file  str : client 端 json 文件绝对地址
+            items dict: 更新键值对
 
         Return:
-          succ bool: 文件更新成功
+            succ bool: 文件更新成功
         """
         try:
             with self.sftp.open(file, 'r') as f:
-                dic = load(f)
-            dic.update(items)
+                origin = load(f)
             with self.sftp.open(file, 'w') as f:
-                f.write(dumps(dic, indent=4))
+                f.write(dumps({**origin, **items}, indent=4))
         except Exception as e:
             logger.error(f"update {file} failed: {e}")
         return True
 
 
 if __name__ == "__main__":
-    pass
+    client = Client("10.121.238.42", 10205, "root", "EcsAdmin?")
+    client.run("top", resp_timeout=2, timeout=5)

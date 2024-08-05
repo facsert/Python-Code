@@ -13,7 +13,7 @@ from apscheduler.job import Job
 
 class Schedule:
     """ schedule module """
-    
+
     scheduler: BackgroundScheduler | None = None
     jobstores = {
         # 'default': SQLAlchemyJobStore(url='sqlite:///jobs.sqlite')
@@ -63,7 +63,7 @@ class Schedule:
     def parse_job(cls, job: Job):
         """ parse job as dict """
         return {"id": job.id, "job": job.func.__name__, "next": job.next_run_time}
-    
+
 if __name__ == '__main__':
     once_task = lambda: print(f"task run at {datetime.now()}")
     once_task.__name__ = f"run once_task at {datetime.now()}"
