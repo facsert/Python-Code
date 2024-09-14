@@ -106,7 +106,7 @@ class Schedule:
 
         cls.cron.write()
         cls.refresh()
-        return cls.tasks[comment]
+        return cls.tasks[comment_id]
 
     @classmethod
     def remove_job(cls, comment: str):

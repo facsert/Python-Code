@@ -86,7 +86,7 @@ class Tar:
         with tarfile.open(output, "w:gz") as package:
             _ = [package.add(file) for file in files]
 
-    @staticmethod       
+    @staticmethod
     def compress_tarxz(files, output):
         """ 压缩成 tar.xz 文件 """
         with tarfile.open(output, "w:xz") as package:

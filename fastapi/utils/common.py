@@ -9,7 +9,7 @@ from loguru import logger
 
 def title(msg: str="title", level:int=3, length: int=50) -> str:
     """ 标题打印 """
-    index = int(level) % 3
+    index = int(level) % 4
     logger.info(("\n\n", "\n", "", "")[index])
     border = ("#", "=", "*", "-")[index] * length
     logger.info(f"{border} {msg} {border}")
