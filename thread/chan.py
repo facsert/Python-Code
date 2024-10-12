@@ -67,9 +67,41 @@ class Chan:
         self.alive = self.thread.is_alive()
         return self.alive is False
 
+def chaner(chans: list[Chan], size: int=5, interval: float=0.1) -> list[Chan]:
+    """ 线程池执行池
+        chans list[Chan]: 线程列表
+        size int: 线程池最大数量
+        interval float: 轮询间隔时间
+    """
+    if not isinstance(size, int) or size <= 0:
+        raise ValueError("size must be int and bigger than 0")
+
+    group: list[Chan] = []
+    pool: list[Chan] = []
+    chans = chans[::-1]
+    
+    while len(pool) < size and chans:
+        chan = chans.pop()
+        chan.run()
+        pool.append(chan)
+    
+    while pool:
+        for index, chan in enumerate(pool):
+            if chan.alive:
+                continue
+            
+            group.append(pool.pop(index))
+            if chans:
+                ch = chans.pop()
+                ch.run()
+                pool.append(ch)
+        
+        sleep(interval)
+    
+    return group
+
 if __name__ == '__main__':
     def wait(second: int):
-        """ test function """
         logger.info(f"wait {second} second")
         sleep(second)
         return second
@@ -77,11 +109,7 @@ if __name__ == '__main__':
     c1 = Chan(func=wait, params={'second': 3}, count=2, timeout=6, interval=1)
     c2 = Chan(func=wait, params={'second': 2}, count=2, interval=1)
 
-    c1.run()
-    c2.run()
-
-    c1.wait()
-    c2.wait()
+    chaner([c1, c2], 2, 0.1)
     logger.info(f"{c1.output=}, {c1.alive=}, {c1.pid=}")
     logger.info(f"{c2.output=}, {c2.alive=}, {c2.pid=}")
     logger.info("finish")
