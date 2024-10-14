@@ -7,7 +7,7 @@ import uvicorn
 from loguru import logger
 from fastapi import FastAPI
 
-from utils.logger import LOGGER
+from utils.logger import logger_init
 from utils.database import Database
 from utils.middleware import add_middlewares
 from utils.router import add_routers
@@ -19,11 +19,12 @@ PORT = 8001
 @asynccontextmanager
 async def lifespan(router: FastAPI):
     """ 应用开启和结束操作 """
+    logger_init()
+    logger.info(f"Server {HOST}:{PORT} start")
     Database.init()
     add_routers(router)
-    logger.info("app start")
     yield
-    logger.info("app close")
+    logger.info(f"Server {HOST}:{PORT} close")
 
 app = FastAPI(
     title="FastAPI",
@@ -40,6 +41,5 @@ if __name__ == "__main__":
         host=HOST,
         port=PORT,
         reload=False,
-        log_config=LOGGER,
         use_colors=False
     )
