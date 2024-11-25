@@ -1,5 +1,6 @@
+from typing import Literal
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 from psycopg_pool import ConnectionPool
 from psycopg.rows import dict_row
@@ -15,34 +16,43 @@ class DBConnect:
     user: str
     password: str
 
-DEFAULT_DATABASE: DBConnect = DBConnect(
+server: DBConnect = DBConnect(
     host="localhost",
     port="5432",
-    dbname="postgres",
+    dbname="server",
     user="postgres",
-    password="password"
+    password="postgres"
 )
+
+backup: DBConnect = DBConnect(
+    host="localhost",
+    port="5432",
+    dbname="backup",
+    user="postgres",
+    password="postgres"
+)
+
+DATABASE = [server, backup]
+type DBName = Literal[ "server", "backup"]
 
 class Database:
     """ database module """
-    pool: ConnectionPool| None = None
-    db: DBConnect = DEFAULT_DATABASE
 
     @classmethod
-    def init(cls, db: DBConnect|None=None) -> None:
+    def init(cls) -> None:
         """ 数据库初始化连接 """
-        cls.db = db if db else cls.db
-        cls.pool = ConnectionPool(
-            min_size=1,
-            max_size=10,
-            conninfo=" ".join(f"{k}={v}" for k, v in vars(cls.db).items())
+        connect = lambda conn: ConnectionPool(
+            min_size=1, max_size=10,
+            conninfo=" ".join(f"{k}={v}" for k, v in asdict(conn).items())
         )
+        _ = [setattr(cls, conn.dbname, connect(conn)) for conn in DATABASE]
 
     @contextmanager
-    def __new__(cls, db: DBConnect|None=None):
-        _ = cls.init(db) if db else None
+    def __new__(cls, dbname: DBName="server"):
+        pool = getattr(cls, dbname)
+        _ = cls.init() if pool is None else None
         try:
-            conn = cls.pool.getconn()
+            conn = pool.getconn()
             cursor = conn.cursor(row_factory=dict_row)
             yield cursor
             conn.commit()
@@ -51,11 +61,15 @@ class Database:
             logger.error(f"error: {e}")
         finally:
             _ = cursor.close() if cursor else None
-            _ = cls.pool.putconn(conn) if cls.pool else None
+            _ = pool.putconn(conn) if pool else None
 
 if __name__ == "__main__":
     Database.init()
-    with Database() as cur:
-        cur.execute("SELECT id, title FROM article")
-        print(cur.fetchall())
+    with Database() as cursor:
+        nodes = cursor.execute("SELECT * FROM nodes LIMIT 3").fetchall()
+        print(nodes)
+
+    with Database("backup") as cursor:
+        nodes = cursor.execute("SELECT * FROM nodes LIMIT 3").fetchall()
+        print(nodes)
 
