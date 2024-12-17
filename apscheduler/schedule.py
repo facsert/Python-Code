@@ -45,14 +45,16 @@ class Schedule:
         return cls.scheduler.get_jobs()
 
     @classmethod
-    def add_once_job(cls, id: str, func: callable, timestamp: datetime):
+    def add_once_job(cls, name: str, func: callable, timestamp: datetime):
         """ create once job """
-        cls.scheduler.add_job(func, 'date', run_date=timestamp, id=id)
+        cls.scheduler.add_job(func, 'date', run_date=timestamp, name=id)
 
     @classmethod
-    def add_cron_job(cls, id: str, func: callable, cron: str):
-        """ create crontab job """
-        cls.scheduler.add_job(func, trigger=CronTrigger.from_crontab(cron), id=id)
+    def add_cron_job(cls, name: str, func: callable, cron: str):
+        """ create crontab job
+            cron: crontab string, like "0 0 * * *"
+        """
+        cls.scheduler.add_job(func, trigger=CronTrigger.from_crontab(cron), name=id)
 
     @classmethod
     def remove_job(cls, id: str):
