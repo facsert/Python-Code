@@ -133,7 +133,7 @@ class Client:
                 _ = logger.error(f"TimeoutError: {command}") if view else False
                 output.append(f"\nTimeoutError: {command}")
                 break
-        return check_result, output
+        return check_result, "".join(output)
 
     def set_env_var(self, variable: str, value: str, view: bool=False) -> bool:
         """ 设置环境变量
