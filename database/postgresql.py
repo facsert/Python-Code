@@ -42,7 +42,8 @@ class Database:
     def init(cls) -> None:
         """ 数据库初始化连接 """
         connect = lambda conn: ConnectionPool(
-            min_size=1, max_size=10,
+            min_size=1,
+            max_size=10,
             conninfo=" ".join(f"{k}={v}" for k, v in asdict(conn).items())
         )
         _ = [setattr(cls, conn.dbname, connect(conn)) for conn in DATABASE]
@@ -51,6 +52,7 @@ class Database:
     def __new__(cls, dbname: DBName="server"):
         pool = getattr(cls, dbname)
         _ = cls.init() if pool is None else None
+        cursor, conn = None, None
         try:
             conn = pool.getconn()
             cursor = conn.cursor(row_factory=dict_row)

@@ -45,7 +45,7 @@ class Schedule:
             return f"{comment} exist", False
 
         if not CronSlices.is_valid(timestamp):
-            return f"{timestamp} Invaild", False
+            return f"{timestamp} Invalid", False
 
         job: CronItem = cls.cron.new(command, comment)
         job.setall(timestamp)
