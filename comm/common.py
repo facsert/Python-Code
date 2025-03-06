@@ -7,12 +7,12 @@ from os.path import join, dirname, exists
 from loguru import logger
 
 
-def title(msg: str="title", level:int=3, length: int=50) -> str:
+def title(msg: str="title", level:int=3, length: int=100) -> str:
     """ 标题打印 """
-    index = int(level) % 3
+    index, msg = int(level) % 4, f" {msg} "
     logger.info(("\n\n", "\n", "", "")[index])
-    border = ("#", "=", "*", "-")[index] * length
-    logger.info(f"{border} {msg} {border}")
+    border = ("#", "=", "*", "-")[index]
+    logger.info(f" {msg:{border}^{length}}")
     return msg
 
 
