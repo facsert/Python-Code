@@ -1,4 +1,5 @@
 """ common method """
+import socket
 from time import sleep
 from platform import system
 from os import walk
@@ -60,6 +61,13 @@ def list_dir(path=".", ignore=None):
             if not ignore(file):
                 yield join(root, file)
 
+def conn_port(host: str, port: int, timeout: int=3) -> bool:
+    """ 检查端口是否可连接 """
+    try:
+        with socket.create_connection((host, port), timeout):
+            return True
+    except (socket.timeout, socket.error):
+        return False
 
 if __name__ == '__main__':
     pass

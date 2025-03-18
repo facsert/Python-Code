@@ -3,36 +3,43 @@ from traceback import format_exc
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 
-import MySQLdb
+# import MySQLdb
+from dbutils.pooled_db import PooledDB
+import pymysql
+from pymysql import Error
+from pymysql.cursors import DictCursor
 from loguru import logger
+
+# pip install pymysql dbutils 
+
 
 @dataclass
 class DBConnect:
     """ 数据库连接 """
     host: str
     port: int
-    db: str
+    database: str
     user: str
     password: str
 
 server: DBConnect = DBConnect(
     host="localhost",
     port=3306,
-    db="server",
+    database="server",
     user="user",
     password="password"
 )
 
 backup: DBConnect = DBConnect(
     host="localhost",
-    port=5432,
-    db="backup",
-    user="postgres",
-    password="postgres"
+    port=3306,
+    database="backup",
+    user="user",
+    password="password"
 )
 
-DATABASE = [server, backup]
-type DBName = Literal["server", "backup"]
+DATABASE: list[DBConnect] = [server, backup]
+DBName = Literal["server", "backup"]
 
 class Database:
     """ mysql database """
@@ -40,20 +47,32 @@ class Database:
     @classmethod
     def init(cls) -> None:
         """ 数据库初始化,连接测试 """
-        _ = [MySQLdb.connect(**asdict(conn)).close() for conn in DATABASE]
-        _ = [setattr(cls, conn.db, conn) for conn in DATABASE]
+        for conn in DATABASE:
+            if getattr(cls, conn.database, None) is not None:
+                continue
+            
+            setattr(cls, conn.database, PooledDB(
+                **asdict(conn),
+                creator=pymysql,
+                maxconnections=10,
+                mincached=1,
+                cursorclass=DictCursor,
+                autocommit=True,
+            ))
 
     @contextmanager
-    def __new__(cls, dbname: DBName="server"):
-        cursor, conn = None, None
+    def __new__(cls, dbname: DBName="backup"):
+        cls.init()
+        pool = getattr(cls, dbname, None)
         try:
-            conn = MySQLdb.connect(**asdict(getattr(cls, dbname)))
-            cursor = conn.cursor(MySQLdb.cursors.DictCursor)
-            yield cursor
-            conn.commit()
+            with pool.connection() as conn:
+                with conn.cursor() as cursor:
+                    yield cursor
         except Exception as e:
-            logger.error(f"{e}\n{format_exc}")
-            _ = conn.rollback() if conn else None
-        finally:
-            _ = cursor.close() if cursor else None
-            _ = conn.close() if conn else None
+            logger.error(f"database execute error: {e}")
+
+if __name__ == '__main__':
+    Database.init()
+    with Database() as cur:
+        cur.execute("SELECT * FROM nodes LIMIT 3")
+        print(cur.fetchall())
