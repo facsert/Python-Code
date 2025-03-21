@@ -1,7 +1,0 @@
-fastapi[all]
-loguru
-toml
-psycopg[binary]
-psycopg_pool
-python-crontab
-croniter

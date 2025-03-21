@@ -6,7 +6,6 @@ import logging
 from datetime import timedelta
 
 from loguru import logger
-# from uvicorn.config import LOGGING_CONFIG
 
 from utils.common import abs_dir
 

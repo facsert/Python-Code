@@ -28,6 +28,7 @@ class Mail:
         for _ in range(retry):
             try:
                 self.smtp: SMTP = SMTP(SMTP_URL, SMTP_PORT)
+                self.smtp.starttls()
                 self.smtp.login(self.username, self.password)
                 return True
             except Exception as e:

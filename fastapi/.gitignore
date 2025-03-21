@@ -7,7 +7,7 @@ __pycache__/
 *.log
 *.txt
 
-!requirement.txt
+!requirements.txt
 
 # C extensions
 *.so

@@ -1,4 +1,5 @@
 """ common method """
+import socket
 from time import sleep
 from platform import system
 from os import walk
@@ -7,12 +8,12 @@ from os.path import join, dirname, exists
 from loguru import logger
 
 
-def title(msg: str="title", level:int=3, length: int=50) -> str:
+def title(msg: str="title", level:int=3, length: int=100) -> str:
     """ 标题打印 """
-    index = int(level) % 4
+    index, msg = int(level) % 4, f" {msg} "
     logger.info(("\n\n", "\n", "", "")[index])
-    border = ("#", "=", "*", "-")[index] * length
-    logger.info(f"{border} {msg} {border}")
+    border = ("#", "=", "*", "-")[index]
+    logger.info(f" {msg:{border}^{length}}")
     return msg
 
 
@@ -48,7 +49,7 @@ def wait(delay: int=1, length: int=50) -> int:
     print(f"Please wait {delay}s [{'#' * (length)}] {delay - use:>4}s")
     return delay
 
-def listpath(path=".", ignore=None):
+def list_dir(path=".", ignore=None):
     """ 递归遍历路径下的所有文件 """
     if not exists(path):
         display(f"{path} not exist", False)
@@ -60,7 +61,13 @@ def listpath(path=".", ignore=None):
             if not ignore(file):
                 yield join(root, file)
 
+def conn_port(host: str, port: int, timeout: int=3) -> bool:
+    """ 检查端口是否可连接 """
+    try:
+        with socket.create_connection((host, port), timeout):
+            return True
+    except (socket.timeout, socket.error):
+        return False
 
 if __name__ == '__main__':
-    wait(10)
-    print(abs_dir("root/Desktop", "Python", platform="linux"))
+    pass

@@ -1,7 +1,13 @@
 from typing import Optional
+from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
 
+@dataclass
+class Response:
+    content: any = None
+    result: bool = True
+    msg: str = "success"
 
 class Node(BaseModel):
     """ node model """

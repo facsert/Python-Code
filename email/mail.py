@@ -28,6 +28,7 @@ class Mail:
         for _ in range(retry):
             try:
                 self.smtp: SMTP = SMTP(SMTP_URL, SMTP_PORT)
+                self.smtp.starttls()
                 self.smtp.login(self.username, self.password)
                 return True
             except Exception as e:
@@ -43,18 +44,22 @@ class Mail:
         self.mail['To'] = Header(", ".join(recv_list))
         self.recv_list = recv_list
 
-    def send_mail(self, template: str, content: dict):
+    def send_mail(self, template_path: str, content: dict):
         """ 发送邮件 """
-        if not exists(template):
+        if not exists(template_path):
+            logger.error(f"{template_path} not exist")
             return False
 
-        env: Environment = Environment(loader=FileSystemLoader(dirname(template)))
-        render: str = env.get_template(basename(template)).render(content)
-
+        env: Environment = Environment(loader=FileSystemLoader(dirname(template_path)))
+        render: str = env.get_template(basename(template_path)).render(content)
+        
         self.mail.attach(MIMEText(render, 'html'))
         self.smtp.sendmail(self.address, self.recv_list, self.mail.as_string())
-        self.smtp.quit()
+        
         return True
+    
+    def close(self):
+        self.smtp.quit()
 
 if __name__ == '__main__':
     m = Mail("username", "password", "xx@outlook.com")
