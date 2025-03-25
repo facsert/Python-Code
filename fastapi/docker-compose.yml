@@ -1,0 +1,28 @@
+name: backend
+services:
+
+  backend1:
+    build: 
+      dockerfile: ./Dockerfile
+      context: .
+      no_cache: true
+      args:
+        USERNAME: $GIT_USERNAME
+        PASSWORD: $GIT_PASSWORD
+    image: fastapi:${TAG}
+    container_name: fastapi1
+    restart: always
+    volumes:
+      - /home/fastapi/8091:/root/fastapi/log
+    ports:
+      - 8081:8000
+  backend2:
+    depends_on:
+      - backend1
+    image: fastapi:${TAG}
+    container_name: fastapi2
+    restart: always
+    volumes:
+      - /home/fastapi/8092:/root/fastapi/log
+    ports:
+      - 8082:8000
