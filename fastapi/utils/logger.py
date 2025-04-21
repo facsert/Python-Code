@@ -1,22 +1,23 @@
 """
-description: 
+description:
 """
-import sys
+
 import logging
+import sys
 from datetime import timedelta
 
 from loguru import logger
-
 from utils.common import abs_dir
 
-LOG_PATH = abs_dir('log', 'report.log')
+LOG_PATH = abs_dir("log", "report.log")
 ROTATION_DAY: int = 7
 RETENTION_DAY: int = 30
-LOG_FORMAT: str = '[<green>{time:YYYY-MM-DD HH:mm:ss}</green>][<level>{level: <8}</level>]: <level>{message}</level>'
+LOG_FORMAT: str = "[<green>{time:YYYY-MM-DD HH:mm:ss}</green>][<level>{level: <8}</level>]: <level>{message}</level>"
+
 
 class InterceptHandler(logging.Handler):
     """
-    Default handler from examples in loguru documentaion.
+    Default handler from examples in loguru document.
     """
 
     def emit(self, record: logging.LogRecord):
@@ -34,6 +35,7 @@ class InterceptHandler(logging.Handler):
             level, record.getMessage()
         )
 
+
 def logger_init():
     """
     拦截 uvicorn 输出, 使用 loguru 接管
@@ -43,14 +45,14 @@ def logger_init():
     logging.getLogger("uvicorn.access").handlers = [InterceptHandler()]
 
     logger.remove()
-    logger.add(sys.stderr,  level='INFO', format=LOG_FORMAT)
+    logger.add(sys.stderr, level="INFO", format=LOG_FORMAT)
     logger.add(
         LOG_PATH,
-        level='INFO',
+        level="INFO",
         format=LOG_FORMAT,
         rotation=timedelta(days=ROTATION_DAY),
         retention=timedelta(days=RETENTION_DAY),
-        enqueue=True
+        enqueue=True,
     )
 
 

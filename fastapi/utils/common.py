@@ -1,9 +1,9 @@
 """ common method """
 import socket
-from time import sleep
-from platform import system
 from os import walk
-from os.path import join, dirname, exists
+from os.path import dirname, exists, join
+from platform import system
+from time import sleep
 
 from loguru import logger
 

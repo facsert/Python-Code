@@ -1,3 +1,4 @@
+import atexit
 from typing import Literal
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
@@ -38,9 +39,15 @@ DBName = Literal[ "server", "backup"]
 class Database:
     """ database module """
     
+    inited: bool = False
+    
     @classmethod
     def init(cls) -> None:
         """ 数据库初始化连接 """
+        
+        if cls.inited:
+            return
+
         for conn in DATABASE:
             if getattr(cls, conn.dbname, None) is not None:
                 continue
@@ -50,17 +57,28 @@ class Database:
                 max_size=10,
                 conninfo=" ".join(f"{k}={v}" for k, v in asdict(conn).items())
             ))
+        
+        atexit.register(cls.close)
+        cls.inited = True
 
     @contextmanager
-    def __new__(cls, dbname: DBName="server"):
+    def __new__(cls, dbname: DBName="base"):
         cls.init()
-        pool: ConnectionPool = getattr(cls, dbname)
+        pool: ConnectionPool = getattr(cls, dbname, None)
         try:
             with pool.connection() as conn:
                 with conn.cursor(row_factory=dict_row) as cursor:
                     yield cursor
-        except Exception as e:
-            logger.error(f"database execute error: {e}")
+        except Exception as err:
+            logger.error(f"db execute error: {err}")
+    
+    @classmethod
+    def close(cls) -> None:
+        """ 数据库连接关闭 """
+        for conn in DATABASE:
+            pool: ConnectionPool = getattr(cls, conn.dbname, None)
+            pool and pool.close()
+
 
 if __name__ == "__main__":
     Database.init()

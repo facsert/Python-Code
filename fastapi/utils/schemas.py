@@ -1,13 +1,35 @@
-from typing import Optional
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
 
+from fastapi.encoders import jsonable_encoder as json_encode
 from pydantic import BaseModel, Field
 
+
+class JsonMeta(type):
+    def __call__(cls, *args, **kwargs):
+        return json_encode(super().__call__(*args, **kwargs))
+
+
 @dataclass
-class Response:
+class Response(metaclass=JsonMeta):
+    """ response model """
     content: any = None
     result: bool = True
     msg: str = "success"
+    code: int = 200
+
+
+class User(BaseModel):
+    """user model"""
+
+    id: int = Field(default=0, description="User ID")
+    username: str = Field(max_length=50, description="Username")
+    password: str = Field(max_length=100, description="Password")
+    role: str = Field(default="guest", description="User role")
+    created_at: datetime = Field(default=datetime.now(), description="Created at")
+    updated_at: datetime = Field(default=datetime.now(), description="Updated at")
+    deleted: bool = Field(default=False, description="Deleted")
 
 class Node(BaseModel):
     """ node model """
