@@ -4,6 +4,7 @@ from time import sleep
 from platform import system
 from os import walk
 from os.path import join, dirname, exists
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from loguru import logger
 
@@ -26,16 +27,17 @@ def display(msg: str="checkpoint", success: bool=True) -> str:
     return msg
 
 
-def abs_dir(*path: str, platform: str|None =None) -> str:
+def abs_dir(*path: str, platform: str=system().lower()) -> str:
     """ 以项目根路径作为相对路径基准拼接
     Param path str      : 相对路径或绝对路径
     Param platform str  : 根据平台变更拼接方式(linux, windows)
     Attention: 参数 path 相对路径必须相对于项目根目录
     """
-    platform = system() if platform is None else platform
-    abs_path = join(dirname(dirname(__file__)), join("", *path))
-    sep = {'linux': '/', 'windows': '\\'}.get(platform.lower(), '/')
-    return abs_path.replace("/", sep).replace("\\", sep)
+    match platform.lower():
+        case 'windows'|'win'|'w': pure = PureWindowsPath
+        case 'linux'|'lin'|'unix'|'l'|'u': pure = PurePosixPath
+        case _: pure = Path
+    return pure(Path(__file__).parent.parent, *path)
 
 def wait(delay: int=1, length: int=50) -> int:
     """ 等待进度条 """
@@ -49,14 +51,15 @@ def wait(delay: int=1, length: int=50) -> int:
     print(f"Please wait {delay}s [{'#' * (length)}] {delay - use:>4}s")
     return delay
 
-def list_dir(path=".", ignore=None):
+def list_dir(path="", ignore=None):
     """ 递归遍历路径下的所有文件 """
-    if not exists(path):
-        display(f"{path} not exist", False)
+    path = Path(path)
+    if not path.exists() or not path.is_dir():
+        logger.error(f"{path} not exists or not a directory")
         return []
 
     ignore = ignore if ignore else lambda f: False
-    for root, _, files in walk(path):
+    for root, _, files in path.walk():
         for file in files:
             if not ignore(file):
                 yield join(root, file)
