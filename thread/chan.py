@@ -38,7 +38,12 @@ class Chan:
             if not self._running:
                 break
 
-            self.output.update({datetime.now(): self.func(**(self.params))})
+            try:
+                output = self.func(**(self.params))
+            except Exception as err:
+                output = f"run {self.func} with {self.params} failed: {err}"
+
+            self.output.update({datetime.now(): output})
             sleep(self.interval)
             index += 1
 
@@ -67,9 +72,10 @@ class Chan:
         self.alive = self.thread.is_alive()
         return self.alive is False
 
-def chaner(chans: list[Chan], size: int=5, interval: float=0.1) -> list[Chan]:
+
+def channel(chan_list: list[Chan], size: int=5, interval: float=0.1) -> list[Chan]:
     """ 线程池执行池
-        chans list[Chan]: 线程列表
+        chan_list list[Chan]: 线程列表
         size int: 线程池最大数量
         interval float: 轮询间隔时间
     """
@@ -78,10 +84,10 @@ def chaner(chans: list[Chan], size: int=5, interval: float=0.1) -> list[Chan]:
 
     group: list[Chan] = []
     pool: list[Chan] = []
-    chans = chans[::-1]
+    chan_list = chan_list[::-1]
     
-    while len(pool) < size and chans:
-        chan = chans.pop()
+    while len(pool) < size and chan_list:
+        chan = chan_list.pop()
         chan.run()
         pool.append(chan)
     
@@ -91,8 +97,8 @@ def chaner(chans: list[Chan], size: int=5, interval: float=0.1) -> list[Chan]:
                 continue
             
             group.append(pool.pop(index))
-            if chans:
-                ch = chans.pop()
+            if chan_list:
+                ch = chan_list.pop()
                 ch.run()
                 pool.append(ch)
         
@@ -109,7 +115,7 @@ if __name__ == '__main__':
     c1 = Chan(func=wait, params={'second': 3}, count=2, timeout=6, interval=1)
     c2 = Chan(func=wait, params={'second': 2}, count=2, interval=1)
 
-    chaner([c1, c2], 2, 0.1)
+    channel([c1, c2], 2, 0.1)
     logger.info(f"{c1.output=}, {c1.alive=}, {c1.pid=}")
     logger.info(f"{c2.output=}, {c2.alive=}, {c2.pid=}")
     logger.info("finish")

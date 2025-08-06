@@ -10,7 +10,6 @@ class JsonMeta(type):
     def __call__(cls, *args, **kwargs):
         return json_encode(super().__call__(*args, **kwargs))
 
-
 @dataclass
 class Response(metaclass=JsonMeta):
     """ response model """
@@ -18,7 +17,6 @@ class Response(metaclass=JsonMeta):
     result: bool = True
     msg: str = "success"
     code: int = 200
-
 
 class User(BaseModel):
     """user model"""

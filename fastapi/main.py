@@ -29,6 +29,7 @@ async def lifespan(router: FastAPI):
     add_routers(router)
     Database.init()
     yield
+    Database.close()
     logger.info(f"Server {HOST}:{PORT} process {PID} close")
 
 app = FastAPI(
