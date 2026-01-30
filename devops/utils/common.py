@@ -1,8 +1,9 @@
 """ common method """
 import socket
-from time import sleep
+from os import walk
+from os.path import dirname, exists, join
 from platform import system
-from os.path import join
+from time import sleep
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from loguru import logger
@@ -20,9 +21,9 @@ def title(msg: str="title", level:int=3, length: int=100) -> str:
 def display(msg: str="checkpoint", success: bool=True) -> str:
     """ 结果打印 """
     if bool(success):
-        logger.info(f"{msg:<80} [PASS]")
+        logger.info(f"{msg:<80} [SUCCESS]")
     else:
-        logger.error(f"{msg:><80} [FAIL]")
+        logger.error(f"{msg:><80} [FAILED]")
     return msg
 
 
@@ -34,14 +35,13 @@ def abs_dir(*path: str, platform: str=system().lower()) -> str:
     """
     match platform.lower():
         case 'windows'|'win'|'w': 
-            pure = PureWindowsPath
+            return str(PureWindowsPath(Path(__file__).parent.parent, *path))
         case 'linux'|'lin'|'unix'|'l'|'u': 
-            pure = PurePosixPath
+            return str(PurePosixPath(Path(__file__).parent.parent, *path))
         case _: 
-            pure = Path
-    return pure(Path(__file__).parent.parent, *path)
+            return str(Path(Path(__file__).parent.parent, *path))
 
-def wait(delay: int=1, length: int=50) -> int:
+def wait(delay: int=1, length: int=80) -> int:
     """ 等待进度条 """
     use = 0
     while use < delay:
@@ -53,15 +53,14 @@ def wait(delay: int=1, length: int=50) -> int:
     print(f"Please wait {delay}s [{'#' * (length)}] {delay - use:>4}s")
     return delay
 
-def list_dir(path="", ignore=None):
+def list_dir(path=".", ignore=None):
     """ 递归遍历路径下的所有文件 """
-    path = Path(path)
-    if not path.exists() or not path.is_dir():
-        logger.error(f"{path} not exists or not a directory")
+    if not exists(path):
+        display(f"{path} not exist", False)
         return []
 
     ignore = ignore if ignore else lambda f: False
-    for root, _, files in path.walk():
+    for root, _, files in walk(path):
         for file in files:
             if not ignore(file):
                 yield join(root, file)

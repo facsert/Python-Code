@@ -1,0 +1,15 @@
+name: backend
+services:
+
+  backend:
+    # build: 
+    #   dockerfile: ./Dockerfile
+    #   context: .
+    #   no_cache: true
+    pull_policy: never
+    image: ${IMAGE_NAME}:${TAG}
+    container_name: devops
+    restart: always
+    ports:
+      - 8090:8000
+

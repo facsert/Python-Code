@@ -1,0 +1,55 @@
+default:
+  tags:
+    - shell
+
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  TAG: $CI_COMMIT_SHORT_SHA
+
+# "$CI_COMMIT_REF_NAME"
+# cache:
+#   key:
+#     files:
+#       - requirements.txt
+#   paths:
+#     - $CI_PROJECT_DIR/.cache/
+#   policy: pull-push
+
+build_job:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_message =~ /\[build\]/
+  script:
+    - echo "start build $CI_IMAGE_NAME:$TAG"
+    - docker build --no-cache -t $CI_IMAGE_NAME:$TAG .
+    - echo $CI_DEPLOY_PASSWORD | docker login $CI_REGISTRY -u $CI_DEPLOY_USER --password-stdin 
+    - docker push ${CI_IMAGE_NAME}:$TAG
+    - echo "build ${CI_IMAGE_NAME}:${TAG} success"
+
+test_job1:
+  stage: test
+  rules:
+    - if: $CI_COMMIT_message =~ /\[build\]/
+  script:
+    - echo "run test job1"
+    - echo "test job1 success"
+
+deploy_job:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_message =~ /\[build\]/
+  script:
+    - echo "deploy $CI_IMAGE_NAME:$TAG"
+    - echo "TAG=$TAG" > .env
+    - echo "IMAGE_NAME=$CI_IMAGE_NAME" >> .env
+    - echo $CI_DEPLOY_PASSWORD | docker login $CI_REGISTRY -u $CI_DEPLOY_USER --password-stdin 
+    - docker pull ${CI_IMAGE_NAME}:$TAG
+    - export DB_USERNAME=$DB_USERNAME
+    - export DB_PASSWORD=$DB_PASSWORD
+    - docker compose up -d
+    - docker ps -a | grep $CI_IMAGE_NAME
+    - echo "deploy success"

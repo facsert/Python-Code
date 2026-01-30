@@ -1,45 +1,48 @@
 import atexit
-from typing import Literal
 from contextlib import contextmanager
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from os import getenv
+from typing import Literal
 
-from psycopg_pool import ConnectionPool
-from psycopg.rows import dict_row
 from loguru import logger
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
+
+DBName = Literal["base"]
 
 @dataclass
 class DBConnect:
     """ 数据库连接 """
     host: str
     port: int
-    dbname: str
+    dbname: DBName
     user: str
     password: str
 
-server: DBConnect = DBConnect(
-    host="localhost",
+base: DBConnect = DBConnect(
+    host="192.168.0.30",
     port=5432,
-    dbname="server",
-    user="postgres",
-    password="postgres"
+    dbname="base",
+    user=getenv("DB_USERNAME", "root"),
+    password=getenv("DB_PASSWORD", "admin"),
 )
 
-backup: DBConnect = DBConnect(
-    host="localhost",
-    port=5432,
-    dbname="backup",
-    user="postgres",
-    password="postgres"
-)
+# backup: DBConnect = DBConnect(
+#     host="localhost",
+#     port=5432,
+#     dbname="backup",
+#     user="postgres",
+#     password="postgres"
+# )
 
-DATABASE: list[DBConnect] = [server, backup]
-DBName = Literal[ "server", "backup"]
+DATABASE: list[DBConnect] = [base]
+
 
 class Database:
     """ database module """
     is_init: bool = False
-    pools: dict[str, ConnectionPool] = {}
+    pools: dict[DBName, ConnectionPool] = {}
     
     @classmethod
     def init(cls) -> None:
@@ -61,9 +64,9 @@ class Database:
         atexit.register(cls.close)
 
     @contextmanager
-    def __new__(cls, dbname: DBName="server"):
+    def __new__(cls, dbname: DBName="base"):
         cls.init()
-        pool: ConnectionPool = cls.pools.get(dbname, None)
+        pool: ConnectionPool|None = cls.pools.get(dbname, None)
 
         conn = None
         if pool is None:
@@ -79,17 +82,16 @@ class Database:
     @classmethod
     def close(cls):
         for name, pool in list(cls.pools.items()):
-            pool.closed is False and pool.close()
+            if not pool.closed:
+                pool.close()
             del cls.pools[name]
         cls.is_init = False
 
-if __name__ == "__main__":
-    Database.init()
-    with Database() as cursor:
-        nodes = cursor.execute("SELECT * FROM nodes LIMIT 3").fetchall()
-        print(nodes)
 
-    with Database("backup") as cursor:
-        nodes = cursor.execute("SELECT * FROM nodes LIMIT 3").fetchall()
-        print(nodes)
+if __name__ == "__main__":
+    # Database.init()
+    with Database() as cursor:
+        cursor.execute('SELECT * FROM "users"')
+        print(cursor.fetchall())
+
 

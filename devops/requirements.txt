@@ -1,0 +1,9 @@
+fastapi[standard]
+aiofiles
+loguru
+paramiko
+requests
+toml
+psycopg[binary]
+psycopg_pool
+pyJWT
