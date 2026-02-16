@@ -1,6 +1,7 @@
 from traceback import format_exc
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from utils.schemas import Response
@@ -25,18 +26,12 @@ def add_middlewares(app: FastAPI):
         except Exception as err:
             logger.error(f"Error {type(err).__name__}: {err}")
             logger.error(format_exc())
-            return Response(
-                data=None,
-                result=False,
-                msg=f"server error {type(err).__name__}: {err}",
-                code=500
-            )
+            return JSONResponse(
+                status_code=500, 
+                content=Response(
+                    data=None,
+                    result=False,
+                    msg=f"server error {type(err).__name__}: {err}",
+                    code=500
+                ))
 
-            # token: str = request.cookies.get("token", "")
-            # logger.info(dir(request.headers))
-            # if token:
-            #     headers = [*list(request.scope['headers']), ('Authorization', f'Bearer {token}')]
-            #     request = Request(scope={**request.scope, 'headers': headers}, receive=request.receive)
-            #     # request.headers["Authorization"] = f"Bearer {token}"
-            #     # request.headers.__dict__["_list"].append(f"Bearer {token}")
-            # logger.info(f"request headers: {request.headers.get('Authorization', 'empty')}")
