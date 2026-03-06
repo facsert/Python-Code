@@ -2,131 +2,150 @@ import tarfile
 import zipfile
 import gzip
 from os import makedirs
-from os.path import basename, exists
-from re import search
+from os.path import dirname
+from pathlib import Path
+from shutil import copyfileobj
 
-import rarfile
-from loguru import logger
+from typing import Iterable, Generator, Any
 
 class Tar:
-    """ 压缩和解压包 """
 
-    @staticmethod
-    def extract_zip(filepath, output):
-        """ 解压 zip 压缩文件 """
-        makedirs(output, exist_ok=True)
-        with zipfile.ZipFile(filepath, 'r') as package:
-            package.extractall(output)
-        return output
+    read_mode: str = "r"
+    write_mode: str = "w"
+    
+    def compress(self, path_or_files: str|list[str], dst: str) -> int:
+        """ 压缩 """
+        count: int = 0
+        with tarfile.open(dst, self.write_mode) as tar:
+            for file, arc in self.list_files(path_or_files):
+                tar.add(file, arcname=arc)
+                count += 1
+        return count
 
-    @staticmethod
-    def extract_targz(filepath, output):
-        """ 解压 tar.gz 压缩文件 """
-        makedirs(output, exist_ok=True)
-        with tarfile.open(filepath, "r:gz") as package:
-            package.extractall(output)
-        return output
+    def extract(self, file: str, dst: str) -> int:
+        """ 解压缩 """
+        makedirs(dst, exist_ok=True)
+        with tarfile.open(file, self.read_mode) as tar:
+            tar.extractall(dst)
+            return len(tar.getmembers())
 
-    @staticmethod
-    def extract_tarxz(filepath, output):
-        """ 解压 tar.xz 压缩文件 """
-        makedirs(output, exist_ok=True)
-        with tarfile.open(filepath, "r:xz") as package:
-            package.extractall(output)
-        return output
+    def list_files(self, path_or_files: str|Iterable[str]) -> Generator[tuple[Path, str], Any, None]:
+        """ 读取路径或文件列表返回文件 """
+        if isinstance(path_or_files, (list, tuple, set)):
+            for file in path_or_files:
+                p: Path = Path(file)
+                yield p, p.name
+        else:
+            path: Path = Path(path_or_files)
+            if path.is_file():
+                yield path, path.name
+            
+            elif path.is_dir():
+                for file in path.rglob("*"):
+                    if file.is_file():
+                        yield file, str(file.relative_to(path))
+            else:
+                raise FileNotFoundError(path)
 
-    @staticmethod
-    def extract_rar(filepath, output):
-        """ 解压 rar 压缩文件 """
-        makedirs(output, exist_ok=True)
-        with rarfile.RarFile(filepath, "r") as package:
-            package.extractall(output)
-        return output
+class TarZip(Tar):
+    """ zip 压缩/解压缩 """
 
-    @staticmethod
-    def extract_gz(filepath, output):
-        """ 解压 gz 压缩文件(gz 是单文件) """
-        gz = gzip.open(filepath, 'rb')
-        with open(output, 'wb') as f:
-            while True:
-                chunk = gz.read(65535)
-                if not chunk:
-                    break
-                f.write(chunk)
-        gz.close()
+    read_mode: str = "r"
+    write_mode: str = "w"
 
-    @classmethod
-    def extract(cls, filepath, output):
-        """ 解压 .tar.gz, .tar.xz, .gz, .rar, .zip 压缩包"""
-        filename = basename(filepath).lower()
-        suffix_list = (".tar.gz", ".tar.xz", ".gz", ".rar", ".zip")
-        suffix = search(f"({'|'.join(suffix_list)})$", filename)
-        if not suffix:
-            logger.error(f"Not support extract {filepath}")
-            return False
+    def compress(self, path_or_files: str|list[str], dst: str) -> int:
+        """ zip 压缩 """
+        count = 0
+        with zipfile.ZipFile(dst, "w", compression=zipfile.ZIP_DEFLATED) as z:
+            for file, arc in self.list_files(path_or_files):
+                z.write(file, arcname=arc)
+                count += 1
+        return count
+    
+    def extract(self, file, dst) -> int:
+        """ zip 解压缩 """
+        makedirs(dst, exist_ok=True)
+        with zipfile.ZipFile(file, "r") as z:
+            z.extractall(dst)
+            return len(z.namelist())
 
-        {
-            ".tar.gz": cls.extract_targz,
-            ".tar.xz": cls.extract_tarxz,
-            ".gz": cls.extract_gz,
-            ".rar": cls.extract_rar,
-            ".zip": cls.extract_zip,
-        }[suffix.group()](filepath, output)
-        return True
+class TarGz(Tar):
+    """ tar.gz 压缩/解压缩 """
+    
+    read_mode: str = "r:gz"
+    write_mode: str = "w:gz"
 
-    @staticmethod
-    def compress_zip(files, output):
-        """ 压缩成 zip 文件 """
-        with zipfile.ZipFile(output, 'w') as package:
-            _ = [package.write(file) for file in files]
+class TarXz(TarGz):
+    """ tar.xz 压缩/解压缩 """
 
-    @staticmethod
-    def compress_targz(files, output):
-        """ 压缩成 tar.gz 文件 """
-        with tarfile.open(output, "w:gz") as package:
-            _ = [package.add(file) for file in files]
+    read_mode: str = "r:xz"
+    write_mode: str = "w:xz"
 
-    @staticmethod
-    def compress_tarxz(files, output):
-        """ 压缩成 tar.xz 文件 """
-        with tarfile.open(output, "w:xz") as package:
-            _ = [package.add(file) for file in files]
+class Gz:
+    """ gz 压缩/解压缩 """
 
-    @staticmethod
-    def compress_gz(file, output):
-        """ 压缩成 gz 文件 """
-        file = file if isinstance(file, str) else file[0]
-        with open(file, 'rb') as fp:
-            with gzip.open(output, 'wb') as gz:
-                while True:
-                    chunk = fp.read(65535)
-                    if not chunk:
-                        break
-                    gz.write(chunk)
+    read_mode: str = "rb"
+    write_mode: str = "wb"
+    
+    def extract(self, file: str, dst: str) -> int:
+        makedirs(dirname(dst), exist_ok=True)
+        with gzip.open(file, "rb") as f_in:
+            with open(dst, "wb") as f_out:
+                copyfileobj(f_in, f_out)
+        return 1
+                    
+    def compress(self, path_or_files: str|list[str], dst: str) -> int:
+        path = Path(path_or_files)
+        if not path.is_file():
+            raise TypeError("gzip only supports single file")
 
-    @classmethod
-    def compress(cls, files:list[str]|str, output:str) -> bool:
-        """ 压缩文件(不支持 rar)"""
-        package_name = basename(output).lower()
-        suffix_list = (".tar.gz", ".tar.xz", ".gz", ".zip")
-        suffix = search(f"({'|'.join(suffix_list)})$", package_name)
-        if not suffix:
-            logger.error(f"Not support compress {output}")
-            return False
+        with open(path, self.read_mode) as fs:
+            with gzip.open(dst, self.write_mode) as tar:
+                copyfileobj(fs, tar)
+        
+        return 1
 
-        files = files if isinstance(files, list) else [files]
-        not_exist = list(filter(lambda f: not exists(f), files))
-        if not_exist:
-            logger.error(f"File not exists: {list(not_exist)}")
-            return False
+def compress(path_or_files: str|list[str], dst: str) -> int:
+    """ 路径或文件压缩 """
+    name: str = dst.lower()
+    if name.endswith(".zip"):
+        return TarZip().compress(path_or_files, dst)
 
-        {
-            ".tar.gz": cls.compress_targz,
-            ".gz": cls.compress_gz,
-            ".tar.xz": cls.compress_tarxz,
-            ".zip": cls.compress_zip,
-        }[suffix.group()](files, output)
-        return True
+    if name.endswith(".tar.gz"):
+        return TarGz().compress(path_or_files, dst)
 
-if __name__ == '__main__':
-    pass
+    if name.endswith(".tar.xz"):
+        return TarXz().compress(path_or_files, dst)
+    
+    if name.endswith(".gz"):
+        return Gz().compress(path_or_files, dst)
+    
+    raise RuntimeError("unsupported archive type, applies to zip, tar.gz, tar.xz, gz")
+
+def extract(file: str, dst: str) -> int:
+    """ 解压包 """
+    path: Path = Path(file)
+    if not path.is_file():
+        raise FileExistsError(f"{file} not exist or not a package")
+    
+    name: str = path.name.lower()
+    if name.endswith(".zip"):
+        return TarZip().extract(file, dst)
+
+    if name.endswith(".tar.gz"):
+        return TarGz().extract(file, dst)
+
+    if name.endswith(".tar.xz"):
+        return TarXz().extract(file, dst)
+    
+    if name.endswith(".gz"):
+        return Gz().extract(file, dst)
+    
+    raise RuntimeError("unsupported archive type, applies to zip, tar.gz, tar.xz, gz")
+
+if __name__ == "__main__":
+    # 将 /root/home/project 路径下所有文件压缩成 project.tar.gz
+    compress("/root/home/project", "/root/home/project.tar.gz")
+    
+    # 创建 /root/project 路径, 将 project.tar.gz 文件解压到该路径下
+    extract("/root/home/project.tar.gz", "/root/project")
